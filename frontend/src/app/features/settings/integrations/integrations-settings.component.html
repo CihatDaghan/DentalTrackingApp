@@ -1,0 +1,179 @@
+<div class="flex flex-col gap-3" data-testid="integrations-settings">
+  <p class="text-xs text-slate-500 m-0">
+    <i class="fa-solid fa-shield-halved mr-1" aria-hidden="true"></i>
+    {{ 'settings.integrations.secretHint' | transloco }}
+  </p>
+
+  @if (loading()) {
+    <p class="text-slate-400 text-sm py-8 text-center">{{ 'common.loading' | transloco }}</p>
+  } @else {
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      @for (item of integrations(); track item.integrationKey) {
+        <div
+          class="dt-card p-4 flex flex-col gap-3"
+          [attr.data-testid]="'integration-' + item.integrationKey"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-blue-600"
+            >
+              <i [class]="icon(item.integrationKey)" aria-hidden="true"></i>
+            </span>
+            <div class="flex flex-col flex-1 min-w-0">
+              <span class="font-semibold text-slate-800">
+                {{ 'settings.integrations.keys.' + item.integrationKey | transloco }}
+              </span>
+              <span class="text-xs text-slate-400">
+                {{ 'settings.integrations.provider' | transloco }}: {{ item.providerKey }}
+              </span>
+            </div>
+            @if (item.integrationKey !== 'Enabiz') {
+              <p-toggleswitch
+                [ngModel]="card(item.integrationKey).isEnabled"
+                (ngModelChange)="patchCard(item.integrationKey, { isEnabled: $event })"
+                [attr.data-testid]="'integration-enabled-' + item.integrationKey"
+              />
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1">
+              <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                {{ 'settings.integrations.provider' | transloco }}
+              </span>
+              <p-select
+                [options]="providerOptions(item)"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="card(item.integrationKey).providerKey"
+                (ngModelChange)="patchCard(item.integrationKey, { providerKey: $event, values: {} })"
+                [disabled]="item.integrationKey === 'Enabiz'"
+                size="small"
+                appendTo="body"
+                [attr.data-testid]="'integration-provider-' + item.integrationKey"
+              />
+            </label>
+
+            @if (item.integrationKey !== 'Enabiz') {
+              <label class="flex flex-col gap-1">
+                <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                  {{ 'settings.integrations.environment' | transloco }}
+                </span>
+                <p-selectbutton
+                  [options]="environmentOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [allowEmpty]="false"
+                  [ngModel]="card(item.integrationKey).environment"
+                  (ngModelChange)="patchCard(item.integrationKey, { environment: $event })"
+                  size="small"
+                  [attr.data-testid]="'integration-env-' + item.integrationKey"
+                />
+              </label>
+            }
+          </div>
+
+          <!-- e-Nabiz mod secici: KtsRegistered kapaliysa Canli devre disi -->
+          @if (item.integrationKey === 'Enabiz' && enabiz(); as en) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                {{ 'settings.integrations.enabiz.mode' | transloco }}
+              </span>
+              <p-selectbutton
+                [options]="enabizModeOptions()"
+                optionLabel="label"
+                optionValue="value"
+                optionDisabled="disabled"
+                [allowEmpty]="false"
+                [ngModel]="en.mode"
+                (ngModelChange)="setEnabizMode($event)"
+                size="small"
+                data-testid="enabiz-mode"
+              />
+              @if (!en.canGoLive) {
+                <span class="text-[11px] text-amber-600">
+                  <i class="fa-solid fa-triangle-exclamation mr-1" aria-hidden="true"></i>
+                  {{ 'settings.integrations.enabiz.ktsHint' | transloco }}
+                </span>
+              }
+            </div>
+          }
+
+          @if (fields(item).length > 0) {
+            <div class="grid grid-cols-2 gap-3">
+              @for (field of fields(item); track field.name) {
+                <label class="flex flex-col gap-1">
+                  <span class="text-[11px] font-medium text-slate-500 tracking-wide">
+                    {{ 'settings.integrations.fields.' + field.name | transloco }}
+                    @if (field.isSecret) {
+                      <i class="fa-solid fa-lock ml-1 text-slate-400" aria-hidden="true"></i>
+                    }
+                  </span>
+                  <input
+                    pInputText
+                    class="text-sm"
+                    [ngModel]="value(item.integrationKey, field.name)"
+                    (ngModelChange)="setValue(item.integrationKey, field.name, $event)"
+                    [placeholder]="
+                      maskedValue(item, field.name) ||
+                      (field.isSecret
+                        ? ('settings.integrations.secretPlaceholder' | transloco)
+                        : '')
+                    "
+                    [attr.data-testid]="'integration-field-' + item.integrationKey + '-' + field.name"
+                  />
+                </label>
+              }
+            </div>
+          } @else {
+            <p class="text-xs text-slate-400 m-0">
+              {{ 'settings.integrations.noFields' | transloco }}
+            </p>
+          }
+
+          @if (card(item.integrationKey).result; as result) {
+            <div
+              class="rounded-lg px-3 py-2 text-xs flex items-start gap-2"
+              [class.bg-emerald-50]="result.success"
+              [class.text-emerald-800]="result.success"
+              [class.bg-rose-50]="!result.success"
+              [class.text-rose-800]="!result.success"
+              [attr.data-testid]="'integration-result-' + item.integrationKey"
+            >
+              <i
+                class="mt-0.5"
+                [class.fa-solid]="true"
+                [class.fa-circle-check]="result.success"
+                [class.fa-circle-xmark]="!result.success"
+                aria-hidden="true"
+              ></i>
+              <span class="flex-1">{{ result.message }}</span>
+              <span class="opacity-70">{{ result.durationMs }} ms</span>
+            </div>
+          }
+
+          <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+            <p-button
+              [label]="'common.save' | transloco"
+              icon="fa-solid fa-check"
+              size="small"
+              [loading]="card(item.integrationKey).saving"
+              (onClick)="save(item)"
+              [attr.data-testid]="'integration-save-' + item.integrationKey"
+            />
+            <p-button
+              [label]="'settings.integrations.test' | transloco"
+              icon="fa-solid fa-plug-circle-check"
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              [loading]="card(item.integrationKey).testing"
+              (onClick)="test(item)"
+              [attr.data-testid]="'integration-test-' + item.integrationKey"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,134 @@
+{
+ "paket": "203",
+ "alanlar": [
+  {
+   "id": "0",
+   "depth": 0,
+   "ad": "HASTA_TAKIP_BILGISI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "0.0",
+   "depth": 1,
+   "ad": "SYSTakipNo",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Gönderilecek paketin ait olduğu hasta başvurusu için sistem tarafından ilk kayıt aşamasında verilen SYS Takip Numarası bilgisi"
+  },
+  {
+   "id": "1",
+   "depth": 0,
+   "ad": "AGIZ_DIS_SAGLISI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0",
+   "depth": 1,
+   "ad": "DIS_MUDAHALE_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Evet",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.0",
+   "depth": 2,
+   "ad": "MUDAHALE",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "c3eb10bb-27b9-6344-e043-14031b0a5679",
+   "detayBaslik": "MUDAHALE"
+  },
+  {
+   "id": "1.0.1",
+   "depth": 2,
+   "ad": "MUDAHALE_BASLANGIC_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.2",
+   "depth": 2,
+   "ad": "MUDAHALE_BITIS_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.3",
+   "depth": 2,
+   "ad": "TEDAVI_EDILEN_DISIN_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "d5743829-cf07-4dda-bfb5-69439599628a",
+   "detayBaslik": "TEDAVI_EDILEN_DISIN_KODU"
+  },
+  {
+   "id": "1.0.4",
+   "depth": 2,
+   "ad": "ISLEM_REFERANS_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili işleme ait tekil HBYS referans no"
+  },
+  {
+   "id": "1.1",
+   "depth": 1,
+   "ad": "MEVCUT_DIS_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.1.0",
+   "depth": 2,
+   "ad": "MEVCUT_DIS_DURUMU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "633f6442-19f4-419c-a7c9-9b2e0bd16a00",
+   "detayBaslik": "MEVCUT_DIS_DURUMU"
+  },
+  {
+   "id": "1.1.1",
+   "depth": 2,
+   "ad": "MEVCUT_DIS_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "d5743829-cf07-4dda-bfb5-69439599628a",
+   "detayBaslik": "MEVCUT_DIS_KODU"
+  }
+ ],
+ "sonucKodlari": []
+}

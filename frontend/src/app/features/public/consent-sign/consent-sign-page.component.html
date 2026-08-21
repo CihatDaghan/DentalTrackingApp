@@ -1,0 +1,130 @@
+<div class="consent-page">
+  @switch (state()) {
+    @case ('loading') {
+      <div class="consent-page__status">
+        <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
+        <span>{{ 'common.loading' | transloco }}</span>
+      </div>
+    }
+    @case ('gone') {
+      <div class="consent-page__status" data-testid="consent-gone">
+        <span class="consent-page__status-icon consent-page__status-icon--warn">
+          <i class="fa-regular fa-hourglass-half" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicConsent.goneTitle' | transloco }}</h2>
+        <p>{{ 'publicConsent.goneMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('error') {
+      <div class="consent-page__status" data-testid="consent-error">
+        <span class="consent-page__status-icon consent-page__status-icon--warn">
+          <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicConsent.errorTitle' | transloco }}</h2>
+        <p>{{ 'publicConsent.errorMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('signed') {
+      <div class="consent-page__status" data-testid="consent-success">
+        <span class="consent-page__status-icon consent-page__status-icon--success">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicConsent.successTitle' | transloco }}</h2>
+        <p>{{ 'publicConsent.successMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('declined') {
+      <div class="consent-page__status" data-testid="consent-declined">
+        <span class="consent-page__status-icon consent-page__status-icon--warn">
+          <i class="fa-solid fa-ban" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicConsent.declinedTitle' | transloco }}</h2>
+        <p>{{ 'publicConsent.declinedMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('view') {
+      @if (view(); as v) {
+        <div class="consent-page__card" data-testid="consent-view">
+          <header class="consent-page__header">
+            <i class="fa-solid fa-tooth" aria-hidden="true"></i>
+            <div>
+              <h1>{{ v.clinicName }}</h1>
+              <span>{{ 'publicConsent.patientLabel' | transloco }}: {{ v.patientMaskedName }}</span>
+            </div>
+          </header>
+
+          <!-- Onam metni: sonuna inilmeden imza alani acilmaz -->
+          <div
+            #consentBody
+            class="consent-page__body"
+            data-testid="consent-body"
+            (scroll)="onBodyScroll()"
+            [innerHTML]="v.renderedHtml"
+          ></div>
+
+          @if (!scrolledToEnd()) {
+            <div class="consent-page__scroll-hint" data-testid="scroll-hint">
+              <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+              {{ 'publicConsent.scrollHint' | transloco }}
+            </div>
+          }
+
+          <label class="consent-page__accept" [class.consent-page__accept--disabled]="!scrolledToEnd()">
+            <p-checkbox
+              [ngModel]="accepted()"
+              (ngModelChange)="accepted.set($event)"
+              [binary]="true"
+              [disabled]="!scrolledToEnd()"
+              inputId="consent-accept"
+              data-testid="accept-checkbox"
+            />
+            {{ 'publicConsent.readUnderstood' | transloco }}
+          </label>
+
+          <div class="consent-page__signature">
+            <span class="consent-page__signature-label">
+              {{ 'consent.signatureLabel' | transloco }}
+            </span>
+            <div style="height: 180px">
+              <app-signature-pad
+                [disabled]="!canSign()"
+                [hint]="'consent.signatureHint' | transloco"
+                (drawn)="onDrawn()"
+              />
+            </div>
+            <div class="consent-page__signature-actions">
+              <p-button
+                [label]="'consent.clearSignature' | transloco"
+                icon="fa-solid fa-eraser"
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                [disabled]="!canSign()"
+                (onClick)="clearSignature()"
+              />
+            </div>
+          </div>
+
+          <div class="consent-page__actions">
+            <p-button
+              [label]="'publicConsent.decline' | transloco"
+              severity="danger"
+              [outlined]="true"
+              data-testid="decline-btn"
+              [disabled]="submitting()"
+              (onClick)="decline()"
+            />
+            <p-button
+              [label]="'publicConsent.confirm' | transloco"
+              icon="fa-solid fa-signature"
+              data-testid="public-confirm-sign"
+              [disabled]="!canSubmit()"
+              [loading]="submitting()"
+              (onClick)="submit()"
+            />
+          </div>
+        </div>
+      }
+    }
+  }
+</div>

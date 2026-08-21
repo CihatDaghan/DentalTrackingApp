@@ -1,0 +1,507 @@
+<app-page-header
+  [title]="'laboratory.pageTitle' | transloco"
+  [subtitle]="'laboratory.pageSubtitle' | transloco"
+>
+  <p-selectbutton
+    [options]="viewOptions()"
+    optionLabel="label"
+    optionValue="value"
+    [ngModel]="view()"
+    (ngModelChange)="view.set($event)"
+    [allowEmpty]="false"
+    data-testid="lab-view-toggle"
+  />
+  <p-button
+    [label]="'laboratory.laboratories' | transloco"
+    icon="fa-regular fa-building"
+    size="small"
+    severity="secondary"
+    [outlined]="true"
+    data-testid="lab-companies-btn"
+    (onClick)="openLabs()"
+    *hasPermission="'lab.read'"
+  />
+  <p-button
+    [label]="'laboratory.newCase' | transloco"
+    icon="fa-solid fa-flask"
+    size="small"
+    data-testid="new-lab-case-btn"
+    (onClick)="openNewCase()"
+    *hasPermission="'lab.create'"
+  />
+</app-page-header>
+
+<!-- Filtreler -->
+<div class="dt-card mb-4 flex flex-wrap items-end gap-3 p-3">
+  <div class="flex min-w-40 flex-col gap-1">
+    <label for="f-status" class="text-[11px] font-medium text-slate-500">
+      {{ 'laboratory.col.status' | transloco }}
+    </label>
+    <p-select
+      inputId="f-status"
+      [options]="statusOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filterStatus()"
+      (ngModelChange)="filterStatus.set($event); load()"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      [placeholder]="'common.all' | transloco"
+      data-testid="lab-filter-status"
+    />
+  </div>
+  <div class="flex min-w-44 flex-col gap-1">
+    <label for="f-lab" class="text-[11px] font-medium text-slate-500">
+      {{ 'laboratory.col.laboratory' | transloco }}
+    </label>
+    <p-select
+      inputId="f-lab"
+      [options]="laboratoryOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filterLaboratoryId()"
+      (ngModelChange)="filterLaboratoryId.set($event); load()"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      [placeholder]="'common.all' | transloco"
+      data-testid="lab-filter-laboratory"
+    />
+  </div>
+  <div class="flex min-w-44 flex-col gap-1">
+    <label for="f-doctor" class="text-[11px] font-medium text-slate-500">
+      {{ 'laboratory.form.doctor' | transloco }}
+    </label>
+    <p-select
+      inputId="f-doctor"
+      [options]="doctorOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filterDoctorId()"
+      (ngModelChange)="filterDoctorId.set($event); load()"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      [placeholder]="'common.all' | transloco"
+      data-testid="lab-filter-doctor"
+    />
+  </div>
+  <label class="flex cursor-pointer items-center gap-2 pb-2 text-sm">
+    <p-checkbox
+      [ngModel]="filterOverdueOnly()"
+      (ngModelChange)="filterOverdueOnly.set($event); load()"
+      [binary]="true"
+      inputId="f-overdue"
+      data-testid="lab-filter-overdue"
+    />
+    {{ 'laboratory.overdueOnly' | transloco }}
+  </label>
+  <p-button
+    [label]="'laboratory.clearFilters' | transloco"
+    icon="fa-solid fa-filter-circle-xmark"
+    size="small"
+    severity="secondary"
+    [text]="true"
+    data-testid="lab-clear-filters"
+    (onClick)="clearFilters()"
+  />
+  <span class="ml-auto pb-2 text-sm text-slate-500" data-testid="lab-counts">
+    {{ 'laboratory.totalCases' | transloco: { count: cases().length } }}
+    @if (overdueCount() > 0) {
+      ·
+      <span class="font-semibold text-red-600">
+        {{ 'laboratory.overdueCount' | transloco: { count: overdueCount() } }}
+      </span>
+    }
+  </span>
+</div>
+
+@if (loading()) {
+  <div class="dt-card p-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+} @else if (view() === 'table') {
+  <!-- ============ TABLO ============ -->
+  <div class="dt-card p-3">
+    <p-table
+      [value]="cases()"
+      [rowHover]="true"
+      dataKey="id"
+      [paginator]="cases().length > 25"
+      [rows]="25"
+      (onRowExpand)="onRowExpand($event.data)"
+      data-testid="lab-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 3rem"></th>
+          <th style="width: 10rem">{{ 'laboratory.col.caseNo' | transloco }}</th>
+          <th>{{ 'laboratory.col.patient' | transloco }}</th>
+          <th>{{ 'laboratory.col.workType' | transloco }}</th>
+          <th style="width: 10rem">{{ 'laboratory.col.laboratory' | transloco }}</th>
+          <th style="width: 10rem">{{ 'laboratory.form.doctor' | transloco }}</th>
+          <th style="width: 9rem">{{ 'laboratory.col.dueDate' | transloco }}</th>
+          <th style="width: 8rem">{{ 'laboratory.col.price' | transloco }}</th>
+          <th style="width: 9rem">{{ 'laboratory.col.status' | transloco }}</th>
+          <th style="width: 8rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row let-expanded="expanded">
+        <tr [class.lab-row--overdue]="row.isOverdue" [attr.data-testid]="'lab-row-' + row.id">
+          <td>
+            <p-button
+              type="button"
+              [icon]="expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right'"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pRowToggler]="row"
+              [attr.data-testid]="'lab-expand-' + row.id"
+            />
+          </td>
+          <td class="font-medium text-slate-600">{{ row.caseNo }}</td>
+          <td>
+            <a
+              class="text-blue-600 hover:underline"
+              [routerLink]="['/app/patients', row.patientId, 'laboratory']"
+            >
+              {{ row.patientName }}
+            </a>
+          </td>
+          <td>
+            {{ row.workType }}
+            @if (row.teethCsv) {
+              <span class="ml-1 text-xs text-slate-400">({{ row.teethCsv }})</span>
+            }
+          </td>
+          <td>{{ row.laboratoryName }}</td>
+          <td>{{ row.doctorName }}</td>
+          <td>
+            <span
+              class="whitespace-nowrap"
+              [class.text-red-600]="row.isOverdue"
+              [class.font-semibold]="row.isOverdue"
+            >
+              {{ row.dueDate | trDate: 'dd.MM.yyyy' : true }}
+              @if (row.isOverdue) {
+                <i
+                  class="fa-solid fa-triangle-exclamation ml-1"
+                  [pTooltip]="'laboratory.overdue' | transloco"
+                  tooltipPosition="top"
+                  aria-hidden="true"
+                ></i>
+              }
+            </span>
+          </td>
+          <td>{{ row.price | money }}</td>
+          <td><app-status-tag kind="labCase" [value]="row.status" /></td>
+          <td class="whitespace-nowrap text-right">
+            <p-button
+              icon="fa-solid fa-arrow-right-arrow-left"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'laboratory.changeStatus' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'lab-status-' + row.id"
+              (onClick)="openStatus(row)"
+              *hasPermission="'lab.update'"
+            />
+            <p-button
+              icon="fa-regular fa-pen-to-square"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'common.edit' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'lab-edit-' + row.id"
+              (onClick)="openEditCase(row)"
+              *hasPermission="'lab.update'"
+            />
+            <p-button
+              icon="fa-regular fa-trash-can"
+              size="small"
+              severity="danger"
+              [text]="true"
+              [pTooltip]="'common.delete' | transloco"
+              tooltipPosition="top"
+              (onClick)="removeCase(row)"
+              *hasPermission="'lab.delete'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #expandedrow let-row>
+        <tr>
+          <td colspan="10" class="bg-slate-50">
+            <div class="flex flex-col gap-2 py-2 pl-2">
+              <span class="text-xs font-semibold text-slate-500">
+                {{ 'laboratory.statusHistory' | transloco }}
+              </span>
+              @if (historyOf(row.id).length === 0) {
+                <span class="text-xs text-slate-400">{{ 'laboratory.noHistory' | transloco }}</span>
+              } @else {
+                <ul class="m-0 flex list-none flex-col gap-1 pl-0">
+                  @for (h of historyOf(row.id); track h.id) {
+                    <li class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span class="w-32 shrink-0 text-slate-400">
+                        {{ h.changedAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+                      </span>
+                      <app-status-tag kind="labCase" [value]="h.status" />
+                      <span>{{ h.changedByName || '—' }}</span>
+                      @if (h.note) {
+                        <span class="text-slate-400">· {{ h.note }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="10">
+            <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+              <i class="fa-solid fa-flask text-2xl" aria-hidden="true"></i>
+              <span>{{ 'laboratory.empty' | transloco }}</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+} @else {
+  <!-- ============ KANBAN ============ -->
+  <div class="lab-kanban" cdkDropListGroup data-testid="lab-kanban">
+    @for (status of kanbanStatuses; track status) {
+      <div class="lab-kanban__col dt-card">
+        <div class="lab-kanban__head">
+          <app-status-tag kind="labCase" [value]="status" />
+          <span class="lab-kanban__count">{{ casesByStatus(status).length }}</span>
+        </div>
+        <div
+          class="lab-kanban__body"
+          cdkDropList
+          [id]="columnId(status)"
+          [cdkDropListData]="status"
+          (cdkDropListDropped)="onDrop($event, status)"
+          [attr.data-testid]="'lab-kanban-col-' + status"
+        >
+          @for (labCase of casesByStatus(status); track labCase.id) {
+            <div
+              class="lab-kanban__card"
+              [class.lab-kanban__card--overdue]="labCase.isOverdue"
+              cdkDrag
+              [cdkDragData]="labCase"
+              [attr.data-testid]="'lab-kanban-card-' + labCase.id"
+            >
+              <div class="lab-kanban__card-head">
+                <span class="lab-kanban__case-no">{{ labCase.caseNo }}</span>
+                @if (labCase.isOverdue) {
+                  <i
+                    class="fa-solid fa-triangle-exclamation text-red-600"
+                    [pTooltip]="'laboratory.overdue' | transloco"
+                    tooltipPosition="top"
+                    aria-hidden="true"
+                  ></i>
+                }
+              </div>
+              <a
+                class="lab-kanban__patient"
+                [routerLink]="['/app/patients', labCase.patientId, 'laboratory']"
+              >
+                {{ labCase.patientName }}
+              </a>
+              <span class="lab-kanban__work">{{ labCase.workType }}</span>
+              <div class="lab-kanban__meta">
+                <span>{{ labCase.laboratoryName }}</span>
+                @if (labCase.dueDate) {
+                  <span [class.text-red-600]="labCase.isOverdue">
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                    {{ labCase.dueDate | trDate: 'dd.MM.yyyy' : true }}
+                  </span>
+                }
+              </div>
+            </div>
+          } @empty {
+            <div class="lab-kanban__empty">{{ 'laboratory.kanbanEmpty' | transloco }}</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ============ Lab firmalari ============ -->
+<p-dialog
+  [visible]="labsDialogVisible()"
+  (visibleChange)="labsDialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '46rem', maxWidth: '95vw' }"
+  [header]="'laboratory.laboratories' | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1" data-testid="lab-companies-dialog">
+    <div class="flex justify-end">
+      <p-button
+        [label]="'laboratory.newLab' | transloco"
+        icon="fa-solid fa-plus"
+        size="small"
+        data-testid="new-lab-btn"
+        (onClick)="openLabForm(null)"
+        *hasPermission="'lab.create'"
+      />
+    </div>
+    <p-table [value]="laboratories()" [rowHover]="true" dataKey="id">
+      <ng-template #header>
+        <tr>
+          <th>{{ 'laboratory.form.labName' | transloco }}</th>
+          <th style="width: 11rem">{{ 'laboratory.form.contactPerson' | transloco }}</th>
+          <th style="width: 10rem">{{ 'laboratory.form.phone' | transloco }}</th>
+          <th style="width: 6rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr [attr.data-testid]="'lab-company-row-' + row.id">
+          <td class="font-medium text-slate-700">{{ row.name }}</td>
+          <td>{{ row.contactPerson || '—' }}</td>
+          <td>{{ row.phone || '—' }}</td>
+          <td class="text-right">
+            <p-button
+              icon="fa-regular fa-pen-to-square"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              (onClick)="openLabForm(row)"
+              *hasPermission="'lab.update'"
+            />
+            <p-button
+              icon="fa-regular fa-trash-can"
+              size="small"
+              severity="danger"
+              [text]="true"
+              (onClick)="removeLab(row)"
+              *hasPermission="'lab.delete'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="4" class="py-6 text-center text-slate-400">
+            {{ 'laboratory.noLabs' | transloco }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</p-dialog>
+
+<!-- Lab firmasi formu -->
+<p-dialog
+  [visible]="labFormVisible()"
+  (visibleChange)="labFormVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '28rem' }"
+  [header]="(editingLab() ? 'laboratory.editLab' : 'laboratory.newLab') | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1" data-testid="lab-form-dialog">
+    <div class="flex flex-col gap-1">
+      <label for="lab-name" class="text-sm font-medium">
+        {{ 'laboratory.form.labName' | transloco }} *
+      </label>
+      <input
+        id="lab-name"
+        pInputText
+        class="w-full"
+        [ngModel]="labName()"
+        (ngModelChange)="labName.set($event)"
+        data-testid="lab-form-name"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="lab-contact" class="text-sm font-medium">
+        {{ 'laboratory.form.contactPerson' | transloco }}
+      </label>
+      <input
+        id="lab-contact"
+        pInputText
+        class="w-full"
+        [ngModel]="labContact()"
+        (ngModelChange)="labContact.set($event)"
+        data-testid="lab-form-contact"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="lab-phone" class="text-sm font-medium">
+        {{ 'laboratory.form.phone' | transloco }}
+      </label>
+      <input
+        id="lab-phone"
+        pInputText
+        class="w-full"
+        [ngModel]="labPhone()"
+        (ngModelChange)="labPhone.set($event)"
+        data-testid="lab-form-phone"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="lab-email" class="text-sm font-medium">
+        {{ 'laboratory.form.email' | transloco }}
+      </label>
+      <input
+        id="lab-email"
+        pInputText
+        class="w-full"
+        [ngModel]="labEmail()"
+        (ngModelChange)="labEmail.set($event)"
+        data-testid="lab-form-email"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="lab-address" class="text-sm font-medium">
+        {{ 'laboratory.form.address' | transloco }}
+      </label>
+      <textarea
+        id="lab-address"
+        pTextarea
+        rows="2"
+        class="w-full"
+        [ngModel]="labAddress()"
+        (ngModelChange)="labAddress.set($event)"
+        data-testid="lab-form-address"
+      ></textarea>
+    </div>
+    <div class="flex justify-end gap-2 pt-1">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="labFormVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        [loading]="labSaving()"
+        [disabled]="!labName().trim()"
+        data-testid="lab-form-save"
+        (onClick)="saveLab()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<app-lab-case-dialog
+  [visible]="caseDialogVisible()"
+  (visibleChange)="caseDialogVisible.set($event)"
+  [patientId]="null"
+  [editing]="editingCase()"
+  (saved)="load()"
+/>
+
+<app-lab-status-dialog
+  [visible]="statusDialogVisible()"
+  (visibleChange)="statusDialogVisible.set($event)"
+  [labCase]="statusTarget()"
+  (changed)="load()"
+/>

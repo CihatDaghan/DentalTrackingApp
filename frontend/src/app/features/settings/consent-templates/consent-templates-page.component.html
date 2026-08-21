@@ -1,0 +1,146 @@
+<div class="dt-card p-5 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h3 class="m-0 text-base font-semibold text-slate-700">
+      {{ 'consentTemplates.title' | transloco }}
+    </h3>
+    <p-button
+      [label]="'consentTemplates.new' | transloco"
+      icon="fa-solid fa-plus"
+      size="small"
+      data-testid="new-template-btn"
+      (onClick)="openNew()"
+      *hasPermission="'settings.update'"
+    />
+  </div>
+
+  <p-table [value]="templates()" [loading]="loading()" [rowHover]="true">
+    <ng-template #header>
+      <tr>
+        <th>{{ 'consentTemplates.columns.name' | transloco }}</th>
+        <th>{{ 'consentTemplates.columns.locale' | transloco }}</th>
+        <th>{{ 'consentTemplates.columns.version' | transloco }}</th>
+        <th>{{ 'consentTemplates.columns.active' | transloco }}</th>
+        <th style="width: 7rem"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-item>
+      <tr [attr.data-testid]="'template-row-' + item.id">
+        <td class="font-medium">{{ item.name }}</td>
+        <td class="uppercase">{{ item.locale }}</td>
+        <td>v{{ item.version }}</td>
+        <td>
+          @if (item.isActive) {
+            <i class="fa-solid fa-circle-check text-emerald-500" aria-hidden="true"></i>
+          } @else {
+            <i class="fa-regular fa-circle-xmark text-slate-300" aria-hidden="true"></i>
+          }
+        </td>
+        <td>
+          <div class="flex justify-end gap-1" *hasPermission="'settings.update'">
+            <p-button
+              icon="fa-regular fa-pen-to-square"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'common.edit' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'edit-template-' + item.id"
+              (onClick)="openEdit(item)"
+            />
+            <p-button
+              icon="fa-regular fa-trash-can"
+              size="small"
+              severity="danger"
+              [text]="true"
+              [pTooltip]="'common.delete' | transloco"
+              tooltipPosition="top"
+              (onClick)="remove(item)"
+            />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5">
+          <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+            <i class="fa-regular fa-file-lines text-2xl" aria-hidden="true"></i>
+            <span>{{ 'consentTemplates.empty' | transloco }}</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- Sablon duzenleyici -->
+<p-dialog
+  [visible]="editorVisible()"
+  (visibleChange)="editorVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '56rem', maxWidth: '96vw' }"
+  [header]="(editingId() != null ? 'consentTemplates.editTitle' : 'consentTemplates.newTitle') | transloco"
+>
+  <form [formGroup]="form" class="flex flex-col gap-3 pt-1" (ngSubmit)="save()">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="flex flex-col gap-1 sm:col-span-2">
+        <label for="tpl-name" class="text-sm font-medium">
+          {{ 'consentTemplates.form.name' | transloco }} *
+        </label>
+        <input id="tpl-name" pInputText formControlName="name" data-testid="template-name" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="tpl-locale" class="text-sm font-medium">
+          {{ 'consentTemplates.form.locale' | transloco }}
+        </label>
+        <p-select
+          inputId="tpl-locale"
+          formControlName="locale"
+          [options]="localeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+    </div>
+
+    <!-- Degisken chip'leri -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-xs text-slate-500">{{ 'consentTemplates.variablesHint' | transloco }}:</span>
+      @for (variable of variables; track variable) {
+        <button
+          type="button"
+          class="px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-mono border border-blue-200 hover:bg-blue-100 cursor-pointer"
+          [attr.data-testid]="'var-chip-' + variable"
+          (click)="insertVariable(variable)"
+        >
+          {{ variable }}
+        </button>
+      }
+    </div>
+
+    <p-editor formControlName="bodyHtml" [style]="{ height: '320px' }" data-testid="template-editor" />
+
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <p-checkbox formControlName="isActive" [binary]="true" inputId="tpl-active" />
+      {{ 'consentTemplates.form.active' | transloco }}
+    </label>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="editorVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="template-save"
+        [loading]="saving()"
+      />
+    </div>
+  </form>
+</p-dialog>

@@ -1,0 +1,328 @@
+<div class="dt-card mb-3 flex flex-wrap items-end gap-3 p-3" data-testid="history-filters">
+  <div class="flex flex-col gap-1">
+    <label for="msg-f-channel" class="text-xs font-medium text-slate-500">
+      {{ 'messaging.history.filters.channel' | transloco }}
+    </label>
+    <p-select
+      inputId="msg-f-channel"
+      [options]="channelOptions()"
+      [ngModel]="filterChannel()"
+      (ngModelChange)="filterChannel.set($event); reload()"
+      optionLabel="label"
+      optionValue="value"
+      [showClear]="true"
+      [placeholder]="'common.all' | transloco"
+      styleClass="w-40"
+      data-testid="history-filter-channel"
+    />
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <label for="msg-f-state" class="text-xs font-medium text-slate-500">
+      {{ 'messaging.history.filters.state' | transloco }}
+    </label>
+    <p-select
+      inputId="msg-f-state"
+      [options]="stateOptions()"
+      [ngModel]="filterState()"
+      (ngModelChange)="filterState.set($event); reload()"
+      optionLabel="label"
+      optionValue="value"
+      [showClear]="true"
+      [placeholder]="'common.all' | transloco"
+      styleClass="w-44"
+      data-testid="history-filter-state"
+    />
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <label for="msg-f-from" class="text-xs font-medium text-slate-500">
+      {{ 'messaging.history.filters.from' | transloco }}
+    </label>
+    <p-datepicker
+      inputId="msg-f-from"
+      [ngModel]="filterFrom()"
+      (ngModelChange)="filterFrom.set($event); reload()"
+      dateFormat="dd.mm.yy"
+      [showIcon]="true"
+      [showClear]="true"
+      styleClass="w-40"
+      data-testid="history-filter-from"
+    />
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <label for="msg-f-to" class="text-xs font-medium text-slate-500">
+      {{ 'messaging.history.filters.to' | transloco }}
+    </label>
+    <p-datepicker
+      inputId="msg-f-to"
+      [ngModel]="filterTo()"
+      (ngModelChange)="filterTo.set($event); reload()"
+      dateFormat="dd.mm.yy"
+      [showIcon]="true"
+      [showClear]="true"
+      styleClass="w-40"
+      data-testid="history-filter-to"
+    />
+  </div>
+
+  <div class="flex min-w-56 flex-col gap-1">
+    <label for="msg-f-patient" class="text-xs font-medium text-slate-500">
+      {{ 'messaging.history.filters.patient' | transloco }}
+    </label>
+    <app-patient-search-select
+      inputId="msg-f-patient"
+      [ngModel]="filterPatient()"
+      (ngModelChange)="filterPatient.set($event); reload()"
+      data-testid="history-filter-patient"
+    />
+  </div>
+
+  <div class="ml-auto flex items-center gap-2">
+    <p-button
+      [label]="'messaging.history.quickPaymentLinks' | transloco"
+      icon="fa-solid fa-link"
+      size="small"
+      [severity]="filterTemplateKey() ? 'primary' : 'secondary'"
+      [outlined]="!filterTemplateKey()"
+      (onClick)="togglePaymentLinks()"
+      data-testid="history-quick-payment-links"
+    />
+    @if (hasFilters()) {
+      <p-button
+        icon="fa-solid fa-filter-circle-xmark"
+        size="small"
+        severity="secondary"
+        [text]="true"
+        [pTooltip]="'messaging.history.clearFilters' | transloco"
+        (onClick)="clearFilters()"
+        data-testid="history-filter-clear"
+      />
+    }
+  </div>
+</div>
+
+<div class="dt-card p-2">
+  @if (ready()) {
+    <app-table
+      [columns]="columns"
+      [loader]="loader"
+      [expandedRowKeys]="expandedRowKeys()"
+      dataKey="id"
+      (rowClick)="toggleExpand($event)"
+    >
+      <ng-template #rowCells let-row>
+        <td>
+          <button
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            [attr.aria-expanded]="isExpanded(row)"
+            [attr.data-testid]="'msg-expand-' + row.id"
+            [pTooltip]="'messaging.history.showDetail' | transloco"
+            (click)="toggleExpand(row, $event)"
+          >
+            <i
+              class="fa-solid"
+              [class.fa-chevron-right]="!isExpanded(row)"
+              [class.fa-chevron-down]="isExpanded(row)"
+              aria-hidden="true"
+            ></i>
+          </button>
+        </td>
+        <td class="whitespace-nowrap text-sm text-slate-600">
+          {{ row.createdAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+        </td>
+        <td>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+            [attr.data-testid]="'msg-channel-' + row.id"
+          >
+            <i
+              [class]="channelIcons[row.channel]"
+              [style.color]="row.channel === MessageChannel.WhatsApp ? '#25d366' : '#3b82f6'"
+              aria-hidden="true"
+            ></i>
+            {{ channelLabel(row.channel) }}
+          </span>
+        </td>
+        <td>
+          <div class="flex flex-col">
+            <span class="text-sm font-medium text-slate-700">
+              {{ row.patientName || ('messaging.history.noPatient' | transloco) }}
+            </span>
+            <span class="font-mono text-xs text-slate-400">{{ row.toAddress }}</span>
+          </div>
+        </td>
+        <td class="font-mono text-xs text-slate-600">{{ row.templateKey }}</td>
+        <td><app-status-tag kind="messageKind" [value]="row.kind" /></td>
+        <td>
+          <app-status-tag
+            kind="messageState"
+            [value]="row.state"
+            [attr.data-testid]="'msg-state-' + row.id"
+          />
+        </td>
+        <td class="text-right text-sm text-slate-600">
+          {{ row.creditCost != null ? (row.creditCost | money: '') : '—' }}
+        </td>
+      </ng-template>
+
+      <ng-template #rowExpansion let-row>
+        <div
+          class="m-2 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4"
+          [attr.data-testid]="'msg-detail-' + row.id"
+        >
+          <!-- Mesaj govdesi -->
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {{ 'messaging.history.body' | transloco }}
+            </span>
+            <p
+              class="whitespace-pre-wrap rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700"
+              [attr.data-testid]="'msg-body-' + row.id"
+            >
+              {{ row.renderedBody }}
+            </p>
+          </div>
+
+          <!-- Atlandi: sebep acikca yazilir (KVKK/IYS) -->
+          @if (row.skipReason != null) {
+            <div
+              class="flex items-start gap-3 rounded-md border border-orange-200 bg-orange-50 p-3"
+              [attr.data-testid]="'msg-skip-' + row.id"
+            >
+              <i class="fa-solid fa-circle-minus mt-0.5 text-orange-500" aria-hidden="true"></i>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-semibold text-orange-800">
+                  {{ 'messaging.history.skippedTitle' | transloco }}
+                </span>
+                <span class="text-sm text-orange-800/90">{{ skipReasonLabel(row) }}</span>
+                @if (row.error) {
+                  <span class="text-xs text-orange-700/80">{{ row.error }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Hata mesaji -->
+          @if (row.error && row.skipReason == null) {
+            <div
+              class="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-3"
+              [attr.data-testid]="'msg-error-' + row.id"
+            >
+              <i
+                class="fa-solid fa-triangle-exclamation mt-0.5 text-red-500"
+                aria-hidden="true"
+              ></i>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-semibold text-red-700">
+                  {{ 'messaging.history.errorTitle' | transloco }}
+                </span>
+                <span class="text-sm text-red-700/90">{{ row.error }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Fallback zinciri -->
+          @if (row.fallbackOfMessageId != null) {
+            <div
+              class="flex items-start gap-3 rounded-md border border-indigo-200 bg-indigo-50 p-3"
+              [attr.data-testid]="'msg-fallback-' + row.id"
+            >
+              <i class="fa-solid fa-arrow-turn-down mt-0.5 text-indigo-500" aria-hidden="true"></i>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-semibold text-indigo-800">
+                  {{ 'messaging.history.fallbackOf' | transloco: { id: row.fallbackOfMessageId } }}
+                </span>
+                @if (parentOf(row); as parent) {
+                  <span class="text-sm text-indigo-800/90">
+                    {{
+                      'messaging.history.fallbackChain'
+                        | transloco
+                          : {
+                              from: channelLabel(parent.channel),
+                              to: channelLabel(row.channel),
+                            }
+                    }}
+                  </span>
+                  @if (parent.error) {
+                    <span class="text-xs text-indigo-700/80">{{ parent.error }}</span>
+                  }
+                } @else {
+                  <span class="text-sm text-indigo-800/90">
+                    {{ 'messaging.history.fallbackLoading' | transloco }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (fallbackChild(row); as child) {
+            <div
+              class="flex items-start gap-3 rounded-md border border-indigo-200 bg-indigo-50 p-3"
+              [attr.data-testid]="'msg-fallback-child-' + row.id"
+            >
+              <i class="fa-solid fa-arrow-turn-up mt-0.5 text-indigo-500" aria-hidden="true"></i>
+              <span class="text-sm text-indigo-800">
+                {{
+                  'messaging.history.hasFallback'
+                    | transloco: { id: child.id, channel: channelLabel(child.channel) }
+                }}
+              </span>
+            </div>
+          }
+
+          <!-- Teknik alanlar -->
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-4">
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">
+                {{ 'messaging.history.attemptCount' | transloco }}
+              </dt>
+              <dd class="font-medium text-slate-700" [attr.data-testid]="'msg-attempts-' + row.id">
+                {{ row.attemptCount }}
+              </dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">{{ 'messaging.history.provider' | transloco }}</dt>
+              <dd class="font-medium text-slate-700">{{ row.providerKey || '—' }}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">
+                {{ 'messaging.history.providerMessageId' | transloco }}
+              </dt>
+              <dd
+                class="truncate font-mono text-xs text-slate-700"
+                [attr.data-testid]="'msg-provider-id-' + row.id"
+              >
+                {{ row.providerMessageId || '—' }}
+              </dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">{{ 'messaging.history.sentAt' | transloco }}</dt>
+              <dd class="font-medium text-slate-700">
+                {{ row.sentAtUtc ? (row.sentAtUtc | trDate: 'dd.MM.yyyy HH:mm') : '—' }}
+              </dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">
+                {{ 'messaging.history.deliveredAt' | transloco }}
+              </dt>
+              <dd class="font-medium text-slate-700">
+                {{ row.deliveredAtUtc ? (row.deliveredAtUtc | trDate: 'dd.MM.yyyy HH:mm') : '—' }}
+              </dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-xs text-slate-500">
+                {{ 'messaging.history.scheduledAt' | transloco }}
+              </dt>
+              <dd class="font-medium text-slate-700">
+                {{ row.scheduledAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </ng-template>
+    </app-table>
+  }
+</div>

@@ -1,0 +1,518 @@
+<div class="flex flex-col gap-4">
+  <p-tabs value="register">
+    <p-tablist>
+      <p-tab value="register" data-testid="tab-register">
+        <i class="fa-solid fa-cash-register mr-2" aria-hidden="true"></i>
+        {{ 'cash.tabs.register' | transloco }}
+      </p-tab>
+      <p-tab value="expenses" data-testid="tab-expenses">
+        <i class="fa-solid fa-receipt mr-2" aria-hidden="true"></i>
+        {{ 'cash.tabs.expenses' | transloco }}
+      </p-tab>
+      <p-tab value="companies" data-testid="tab-companies">
+        <i class="fa-regular fa-building mr-2" aria-hidden="true"></i>
+        {{ 'cash.tabs.companies' | transloco }}
+      </p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <!-- ============ KASA ============ -->
+      <p-tabpanel value="register">
+        <div class="flex flex-col gap-4 pt-2">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <p-datepicker
+              [ngModel]="selectedDate()"
+              (ngModelChange)="onDateChange($event)"
+              dateFormat="dd.mm.yy"
+              [showIcon]="true"
+              appendTo="body"
+              data-testid="cash-date"
+            />
+            <p-button
+              [label]="'cash.addExpense' | transloco"
+              icon="fa-solid fa-minus-circle"
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="add-expense-btn"
+              (onClick)="openExpense()"
+              *hasPermission="'expense.create'"
+            />
+          </div>
+
+          <!-- Ozet kartlari -->
+          @if (summary(); as s) {
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-3">
+              @for (mt of methodTotals(); track mt.labelKey) {
+                <div class="dt-card p-3 flex flex-col gap-1">
+                  <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                    {{ mt.labelKey | transloco }}
+                  </span>
+                  <span class="text-lg font-semibold text-slate-700">{{ mt.value | money }}</span>
+                </div>
+              }
+              <div class="dt-card p-3 flex flex-col gap-1 border-blue-200!">
+                <span class="text-[11px] font-medium text-blue-600 uppercase tracking-wide">
+                  {{ 'cash.totalCollections' | transloco }}
+                </span>
+                <span class="text-lg font-semibold text-blue-700" data-testid="total-collections">
+                  {{ s.totalCollections | money }}
+                </span>
+              </div>
+              <div class="dt-card p-3 flex flex-col gap-1">
+                <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                  {{ 'cash.totalExpenses' | transloco }}
+                </span>
+                <span class="text-lg font-semibold text-red-600" data-testid="total-expenses">
+                  {{ s.totalExpenses | money }}
+                </span>
+              </div>
+              <div class="dt-card p-3 flex flex-col gap-1" [class.bg-emerald-50]="s.net >= 0">
+                <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                  {{ 'cash.net' | transloco }}
+                </span>
+                <span
+                  class="text-lg font-semibold"
+                  [class.text-emerald-700]="s.net >= 0"
+                  [class.text-red-600]="s.net < 0"
+                  data-testid="net-total"
+                >
+                  {{ s.net | money }}
+                </span>
+              </div>
+            </div>
+          }
+
+          <!-- Hareketler -->
+          <div class="dt-card p-5 flex flex-col gap-3">
+            <h3 class="m-0 text-base font-semibold text-slate-700">
+              {{ 'cash.movementsTitle' | transloco }}
+            </h3>
+            <p-table [value]="summary()?.movements ?? []" [loading]="loading()" [rowHover]="true">
+              <ng-template #header>
+                <tr>
+                  <th>{{ 'cash.columns.time' | transloco }}</th>
+                  <th>{{ 'cash.columns.account' | transloco }}</th>
+                  <th>{{ 'cash.columns.kind' | transloco }}</th>
+                  <th>{{ 'cash.columns.method' | transloco }}</th>
+                  <th class="text-right!">{{ 'cash.columns.amount' | transloco }}</th>
+                  <th>{{ 'cash.columns.user' | transloco }}</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-mv>
+                <tr>
+                  <td class="whitespace-nowrap">{{ mv.atUtc | trDate: 'HH:mm' }}</td>
+                  <td>
+                    @if (mv.accountName && patientIdFor(mv.accountName) != null) {
+                      <button
+                        type="button"
+                        class="text-blue-600 hover:underline cursor-pointer bg-transparent border-0 p-0 font-medium"
+                        (click)="openAccount(mv.accountName)"
+                      >
+                        {{ mv.accountName }}
+                      </button>
+                    } @else {
+                      {{ mv.accountName ?? '—' }}
+                    }
+                  </td>
+                  <td>
+                    <span
+                      class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      [class.bg-emerald-100]="isPayment(mv.kind)"
+                      [class.text-emerald-700]="isPayment(mv.kind)"
+                      [class.bg-red-100]="!isPayment(mv.kind)"
+                      [class.text-red-700]="!isPayment(mv.kind)"
+                    >
+                      {{ (isPayment(mv.kind) ? 'cash.kinds.payment' : 'cash.kinds.expense') | transloco }}
+                    </span>
+                  </td>
+                  <td>{{ methodLabelKey(mv.method) | transloco }}</td>
+                  <td
+                    class="text-right! whitespace-nowrap font-medium"
+                    [class.text-emerald-600]="isPayment(mv.kind)"
+                    [class.text-red-600]="!isPayment(mv.kind)"
+                  >
+                    {{ isPayment(mv.kind) ? '+' : '−' }}{{ mv.amount | money }}
+                  </td>
+                  <td>{{ mv.userName ?? '—' }}</td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="6">
+                    <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+                      <i class="fa-solid fa-cash-register text-2xl" aria-hidden="true"></i>
+                      <span>{{ 'cash.empty' | transloco }}</span>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </div>
+      </p-tabpanel>
+
+      <!-- ============ GIDERLER ============ -->
+      <p-tabpanel value="expenses">
+        <div class="dt-card p-5 flex flex-col gap-3 mt-2">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h3 class="m-0 text-base font-semibold text-slate-700">
+              {{ 'cash.expensesTitle' | transloco }}
+              <span class="text-sm font-normal text-slate-400">
+                ({{ selectedDate() | trDate: 'dd.MM.yyyy' }})
+              </span>
+            </h3>
+            <p-button
+              [label]="'cash.addExpense' | transloco"
+              icon="fa-solid fa-plus"
+              size="small"
+              data-testid="add-expense-btn-2"
+              (onClick)="openExpense()"
+              *hasPermission="'expense.create'"
+            />
+          </div>
+          <p-table [value]="expenses()" [loading]="expensesLoading()" [rowHover]="true">
+            <ng-template #header>
+              <tr>
+                <th>{{ 'cash.columns.category' | transloco }}</th>
+                <th>{{ 'cash.columns.description' | transloco }}</th>
+                <th>{{ 'cash.columns.method' | transloco }}</th>
+                <th class="text-right!">{{ 'cash.columns.amount' | transloco }}</th>
+                <th>{{ 'cash.columns.user' | transloco }}</th>
+                <th style="width: 4rem"></th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-exp>
+              <tr [attr.data-testid]="'expense-row-' + exp.id">
+                <td class="font-medium">{{ exp.categoryName }}</td>
+                <td>{{ exp.description ?? '—' }}</td>
+                <td>{{ methodLabelKey(exp.method) | transloco }}</td>
+                <td class="text-right! text-red-600 font-medium">{{ exp.amount | money }}</td>
+                <td>{{ exp.paidByName ?? '—' }}</td>
+                <td>
+                  <ng-container *hasPermission="'expense.delete'">
+                    <p-button
+                      icon="fa-regular fa-trash-can"
+                      size="small"
+                      severity="danger"
+                      [text]="true"
+                      (onClick)="deleteExpense(exp)"
+                    />
+                  </ng-container>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6">
+                  <div class="py-8 text-center text-slate-400">{{ 'cash.noExpenses' | transloco }}</div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabpanel>
+
+      <!-- ============ KURUMLAR ============ -->
+      <p-tabpanel value="companies">
+        <div class="dt-card p-5 flex flex-col gap-3 mt-2">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h3 class="m-0 text-base font-semibold text-slate-700">
+              {{ 'cash.companiesTitle' | transloco }}
+            </h3>
+            <p-button
+              [label]="'cash.newCompany' | transloco"
+              icon="fa-solid fa-plus"
+              size="small"
+              data-testid="new-company-btn"
+              (onClick)="openCompanyNew()"
+              *hasPermission="'settings.update'"
+            />
+          </div>
+          <p-table [value]="companies()" [loading]="companiesLoading()" [rowHover]="true">
+            <ng-template #header>
+              <tr>
+                <th>{{ 'cash.columns.companyName' | transloco }}</th>
+                <th>{{ 'cash.columns.vkn' | transloco }}</th>
+                <th>{{ 'cash.columns.phone' | transloco }}</th>
+                <th class="text-right!">{{ 'cash.columns.balance' | transloco }}</th>
+                <th style="width: 10rem"></th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-company>
+              <tr [attr.data-testid]="'company-row-' + company.id">
+                <td class="font-medium">{{ company.name }}</td>
+                <td>{{ company.vkn ?? '—' }}</td>
+                <td>{{ company.phone ?? '—' }}</td>
+                <td
+                  class="text-right! font-medium"
+                  [class.text-red-600]="company.balance > 0"
+                  [class.text-emerald-600]="company.balance <= 0"
+                >
+                  {{ company.balance | money }}
+                </td>
+                <td>
+                  <div class="flex justify-end gap-1">
+                    <p-button
+                      icon="fa-solid fa-file-invoice-dollar"
+                      size="small"
+                      severity="secondary"
+                      [text]="true"
+                      [pTooltip]="'cash.companyLedger' | transloco"
+                      tooltipPosition="top"
+                      [attr.data-testid]="'company-ledger-' + company.id"
+                      (onClick)="openCompanyLedger(company)"
+                    />
+                    <ng-container *hasPermission="'settings.update'">
+                      <p-button
+                        icon="fa-regular fa-pen-to-square"
+                        size="small"
+                        severity="secondary"
+                        [text]="true"
+                        [pTooltip]="'common.edit' | transloco"
+                        tooltipPosition="top"
+                        (onClick)="openCompanyEdit(company)"
+                      />
+                      <p-button
+                        icon="fa-regular fa-trash-can"
+                        size="small"
+                        severity="danger"
+                        [text]="true"
+                        [pTooltip]="'common.delete' | transloco"
+                        tooltipPosition="top"
+                        (onClick)="deleteCompany(company)"
+                      />
+                    </ng-container>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="5">
+                  <div class="py-8 text-center text-slate-400">{{ 'cash.noCompanies' | transloco }}</div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<!-- Gider Ekle -->
+<p-dialog
+  [visible]="expenseVisible()"
+  (visibleChange)="expenseVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '28rem' }"
+  [header]="'cash.expenseTitle' | transloco"
+>
+  <form [formGroup]="expenseForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveExpense()">
+    <div class="flex flex-col gap-1">
+      <label for="exp-category" class="text-sm font-medium">
+        {{ 'cash.form.category' | transloco }} *
+      </label>
+      <p-select
+        inputId="exp-category"
+        formControlName="categoryId"
+        [options]="categories()"
+        optionLabel="name"
+        optionValue="id"
+        [fluid]="true"
+        appendTo="body"
+        data-testid="expense-category"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="exp-amount" class="text-sm font-medium">
+        {{ 'cash.form.amount' | transloco }} *
+      </label>
+      <p-inputnumber
+        inputId="exp-amount"
+        formControlName="amount"
+        mode="currency"
+        currency="TRY"
+        locale="tr-TR"
+        [min]="0"
+        [fluid]="true"
+        data-testid="expense-amount"
+      />
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="exp-date" class="text-sm font-medium">{{ 'cash.form.date' | transloco }} *</label>
+        <p-datepicker
+          inputId="exp-date"
+          formControlName="expenseDate"
+          dateFormat="dd.mm.yy"
+          [showIcon]="true"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="exp-method" class="text-sm font-medium">
+          {{ 'cash.form.method' | transloco }}
+        </label>
+        <p-select
+          inputId="exp-method"
+          formControlName="method"
+          [options]="methodOptions"
+          optionValue="value"
+          [fluid]="true"
+          appendTo="body"
+        >
+          <ng-template #selectedItem let-opt>
+            @if (opt) { {{ opt.labelKey | transloco }} }
+          </ng-template>
+          <ng-template #item let-opt>{{ opt.labelKey | transloco }}</ng-template>
+        </p-select>
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="exp-desc" class="text-sm font-medium">
+        {{ 'cash.form.description' | transloco }}
+      </label>
+      <textarea id="exp-desc" pTextarea formControlName="description" rows="2" class="w-full" data-testid="expense-desc"></textarea>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="expenseVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="expense-save"
+        [loading]="expenseSaving()"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Kurum olustur/duzenle -->
+<p-dialog
+  [visible]="companyVisible()"
+  (visibleChange)="companyVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '32rem' }"
+  [header]="(editingCompany() ? 'cash.editCompany' : 'cash.newCompany') | transloco"
+>
+  <form [formGroup]="companyForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveCompany()">
+    <div class="flex flex-col gap-1">
+      <label for="co-name" class="text-sm font-medium">{{ 'cash.form.companyName' | transloco }} *</label>
+      <input id="co-name" pInputText formControlName="name" data-testid="company-name" />
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="co-vkn" class="text-sm font-medium">{{ 'cash.form.vkn' | transloco }}</label>
+        <input id="co-vkn" pInputText formControlName="vkn" maxlength="11" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="co-tax" class="text-sm font-medium">{{ 'cash.form.taxOffice' | transloco }}</label>
+        <input id="co-tax" pInputText formControlName="taxOffice" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="co-phone" class="text-sm font-medium">{{ 'cash.form.phone' | transloco }}</label>
+        <input id="co-phone" pInputText formControlName="phone" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="co-email" class="text-sm font-medium">{{ 'cash.form.email' | transloco }}</label>
+        <input id="co-email" pInputText formControlName="email" type="email" />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="co-address" class="text-sm font-medium">{{ 'cash.form.address' | transloco }}</label>
+      <textarea id="co-address" pTextarea formControlName="address" rows="2" class="w-full"></textarea>
+    </div>
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <p-checkbox formControlName="isEInvoiceUser" [binary]="true" inputId="co-einvoice" />
+      {{ 'cash.form.isEInvoiceUser' | transloco }}
+    </label>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="companyVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="company-save"
+        [loading]="companySaving()"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Kurum ekstresi -->
+<p-dialog
+  [visible]="companyLedgerTarget() !== null"
+  (visibleChange)="!$event ? companyLedgerTarget.set(null) : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '48rem', maxWidth: '95vw' }"
+  [header]="companyLedgerTarget()?.name ?? ''"
+>
+  @if (companyLedger(); as st) {
+    <div class="flex flex-col gap-3 pt-1" data-testid="company-ledger-dialog">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="border border-slate-200 rounded-lg p-3 flex flex-col gap-0.5">
+          <span class="text-[11px] text-slate-500 uppercase">{{ 'payment.summary.totalTreatment' | transloco }}</span>
+          <span class="font-semibold">{{ st.summary.totalTreatment | money }}</span>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-3 flex flex-col gap-0.5">
+          <span class="text-[11px] text-slate-500 uppercase">{{ 'payment.summary.totalPayment' | transloco }}</span>
+          <span class="font-semibold text-emerald-600">{{ st.summary.totalPayment | money }}</span>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-3 flex flex-col gap-0.5">
+          <span class="text-[11px] text-slate-500 uppercase">{{ 'payment.summary.balance' | transloco }}</span>
+          <span
+            class="font-semibold"
+            [class.text-red-600]="st.summary.balance > 0"
+            [class.text-emerald-600]="st.summary.balance <= 0"
+          >
+            {{ st.summary.balance | money }}
+          </span>
+        </div>
+      </div>
+      <p-table [value]="st.lines" [rowHover]="true" styleClass="p-datatable-sm" [scrollable]="true" scrollHeight="40vh">
+        <ng-template #header>
+          <tr>
+            <th>{{ 'payment.columns.date' | transloco }}</th>
+            <th>{{ 'payment.columns.type' | transloco }}</th>
+            <th>{{ 'payment.columns.description' | transloco }}</th>
+            <th class="text-right!">{{ 'payment.columns.debit' | transloco }}</th>
+            <th class="text-right!">{{ 'payment.columns.credit' | transloco }}</th>
+            <th class="text-right!">{{ 'payment.columns.runningBalance' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-line>
+          <tr>
+            <td class="whitespace-nowrap">{{ line.entryDate | trDate: 'dd.MM.yyyy' : true }}</td>
+            <td><app-status-tag kind="ledger" [value]="line.entryType" /></td>
+            <td>{{ line.description ?? '—' }}</td>
+            <td class="text-right!">{{ line.debit > 0 ? (line.debit | money) : '—' }}</td>
+            <td class="text-right!">{{ line.credit > 0 ? (line.credit | money) : '—' }}</td>
+            <td class="text-right! font-medium">{{ line.runningBalance | money }}</td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              <div class="py-6 text-center text-slate-400">{{ 'payment.empty' | transloco }}</div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  } @else {
+    <div class="py-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+  }
+</p-dialog>

@@ -1,0 +1,570 @@
+<app-page-header
+  [title]="'inventory.pageTitle' | transloco"
+  [subtitle]="'inventory.pageSubtitle' | transloco"
+>
+  <button
+    type="button"
+    class="inventory__low-chip"
+    [class.inventory__low-chip--active]="lowOnly()"
+    data-testid="inventory-low-filter"
+    (click)="toggleLowOnly(!lowOnly())"
+  >
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    {{ 'inventory.lowStock' | transloco }}
+    <span class="inventory__low-count" data-testid="inventory-low-count">{{ lowCount() }}</span>
+  </button>
+  <p-button
+    [label]="'inventory.newItem' | transloco"
+    icon="fa-solid fa-plus"
+    size="small"
+    data-testid="new-item-btn"
+    (onClick)="openItemForm(null)"
+    *hasPermission="'stock.create'"
+  />
+</app-page-header>
+
+<div class="inventory">
+  <!-- ============ Kategori yan paneli ============ -->
+  <aside class="dt-card inventory__categories">
+    <div class="inventory__categories-head">
+      <h3 class="m-0 text-sm font-semibold text-slate-700">
+        {{ 'inventory.categories' | transloco }}
+      </h3>
+      <p-button
+        icon="fa-solid fa-plus"
+        size="small"
+        severity="secondary"
+        [text]="true"
+        [pTooltip]="'inventory.newCategory' | transloco"
+        tooltipPosition="left"
+        data-testid="new-category-btn"
+        (onClick)="openCategoryForm(null)"
+        *hasPermission="'stock.create'"
+      />
+    </div>
+    <ul class="inventory__category-list">
+      <li>
+        <button
+          type="button"
+          class="inventory__category"
+          [class.inventory__category--active]="selectedCategoryId() === null"
+          data-testid="category-all"
+          (click)="selectCategory(null)"
+        >
+          <span>{{ 'inventory.allCategories' | transloco }}</span>
+        </button>
+      </li>
+      @for (category of categories(); track category.id) {
+        <li class="inventory__category-row">
+          <button
+            type="button"
+            class="inventory__category"
+            [class.inventory__category--active]="selectedCategoryId() === category.id"
+            [attr.data-testid]="'category-' + category.id"
+            (click)="selectCategory(category.id)"
+          >
+            <span>{{ category.name }}</span>
+          </button>
+          <span class="inventory__category-actions">
+            <p-button
+              icon="fa-regular fa-pen-to-square"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              (onClick)="openCategoryForm(category)"
+              *hasPermission="'stock.update'"
+            />
+            <p-button
+              icon="fa-regular fa-trash-can"
+              size="small"
+              severity="danger"
+              [text]="true"
+              (onClick)="removeCategory(category)"
+              *hasPermission="'stock.delete'"
+            />
+          </span>
+        </li>
+      } @empty {
+        <li class="px-2 py-4 text-center text-xs text-slate-400">
+          {{ 'inventory.noCategories' | transloco }}
+        </li>
+      }
+    </ul>
+  </aside>
+
+  <!-- ============ Malzeme tablosu ============ -->
+  <div class="dt-card inventory__items">
+    <div class="flex flex-wrap items-center gap-3 border-b border-slate-100 p-3">
+      <span class="p-input-icon-left">
+        <input
+          pInputText
+          class="w-64"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          (keyup.enter)="load()"
+          [placeholder]="'inventory.searchPlaceholder' | transloco"
+          data-testid="inventory-search"
+        />
+      </span>
+      <p-button
+        icon="fa-solid fa-magnifying-glass"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        data-testid="inventory-search-btn"
+        (onClick)="load()"
+      />
+      <label class="flex cursor-pointer items-center gap-2 text-sm">
+        <p-checkbox
+          [ngModel]="includeInactive()"
+          (ngModelChange)="includeInactive.set($event); load()"
+          [binary]="true"
+          inputId="inv-inactive"
+          data-testid="inventory-include-inactive"
+        />
+        {{ 'inventory.includeInactive' | transloco }}
+      </label>
+      <span class="ml-auto text-sm text-slate-500" data-testid="inventory-count">
+        {{ 'inventory.itemCount' | transloco: { count: visibleItems().length } }}
+      </span>
+    </div>
+
+    @if (loading()) {
+      <div class="p-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+    } @else {
+      <p-table
+        [value]="visibleItems()"
+        [rowHover]="true"
+        dataKey="id"
+        [paginator]="visibleItems().length > 25"
+        [rows]="25"
+        (onRowExpand)="onRowExpand($event.data)"
+        data-testid="inventory-table"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 3rem"></th>
+            <th>{{ 'inventory.col.name' | transloco }}</th>
+            <th style="width: 9.5rem">{{ 'inventory.col.category' | transloco }}</th>
+            <th style="width: 8rem">{{ 'inventory.col.barcode' | transloco }}</th>
+            <th style="width: 5.5rem">{{ 'inventory.col.unit' | transloco }}</th>
+            <th style="width: 8rem">{{ 'inventory.col.currentQty' | transloco }}</th>
+            <th style="width: 7.5rem">{{ 'inventory.col.minQty' | transloco }}</th>
+            <th style="width: 8.5rem">{{ 'inventory.col.lastPrice' | transloco }}</th>
+            <th style="width: 5rem">{{ 'inventory.col.active' | transloco }}</th>
+            <th style="width: 9.5rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row let-expanded="expanded">
+          <tr [attr.data-testid]="'stock-row-' + row.id">
+            <td>
+              <p-button
+                type="button"
+                [icon]="expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right'"
+                size="small"
+                severity="secondary"
+                [text]="true"
+                [pRowToggler]="row"
+                [attr.data-testid]="'stock-expand-' + row.id"
+              />
+            </td>
+            <td class="min-w-40 font-medium text-slate-700">{{ row.name }}</td>
+            <td>{{ row.categoryName || '—' }}</td>
+            <td class="font-mono text-xs text-slate-500">{{ row.barcode || '—' }}</td>
+            <td>{{ row.unit || '—' }}</td>
+            <td>
+              @if (row.isLow) {
+                <span
+                  class="inventory__low-badge"
+                  [pTooltip]="'inventory.lowTooltip' | transloco: { min: row.minQty }"
+                  tooltipPosition="top"
+                  [attr.data-testid]="'stock-low-badge-' + row.id"
+                >
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                  <span [attr.data-testid]="'stock-qty-' + row.id">{{ row.currentQty }}</span>
+                </span>
+              } @else {
+                <span
+                  class="font-semibold text-slate-700"
+                  [attr.data-testid]="'stock-qty-' + row.id"
+                >
+                  {{ row.currentQty }}
+                </span>
+              }
+            </td>
+            <td class="text-slate-500">{{ row.minQty }}</td>
+            <td>{{ row.lastPurchasePrice | money }}</td>
+            <td>
+              @if (row.isActive) {
+                <i class="fa-solid fa-circle-check text-emerald-500" aria-hidden="true"></i>
+              } @else {
+                <i class="fa-solid fa-circle-xmark text-slate-300" aria-hidden="true"></i>
+              }
+            </td>
+            <td class="whitespace-nowrap text-right">
+              <p-button
+                icon="fa-solid fa-right-left"
+                size="small"
+                severity="secondary"
+                [text]="true"
+                [pTooltip]="'inventory.addMovement' | transloco"
+                tooltipPosition="top"
+                [attr.data-testid]="'stock-movement-' + row.id"
+                (onClick)="openMovement(row)"
+                *hasPermission="'stock.update'"
+              />
+              <p-button
+                icon="fa-regular fa-pen-to-square"
+                size="small"
+                severity="secondary"
+                [text]="true"
+                [pTooltip]="'common.edit' | transloco"
+                tooltipPosition="top"
+                [attr.data-testid]="'stock-edit-' + row.id"
+                (onClick)="openItemForm(row)"
+                *hasPermission="'stock.update'"
+              />
+              <p-button
+                icon="fa-regular fa-trash-can"
+                size="small"
+                severity="danger"
+                [text]="true"
+                [pTooltip]="'common.delete' | transloco"
+                tooltipPosition="top"
+                (onClick)="removeItem(row)"
+                *hasPermission="'stock.delete'"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #expandedrow let-row>
+          <tr>
+            <td colspan="10" class="bg-slate-50">
+              <div class="flex flex-col gap-2 py-2 pl-2">
+                <span class="text-xs font-semibold text-slate-500">
+                  {{ 'inventory.movementHistory' | transloco }}
+                </span>
+                @if (movementsOf(row.id).length === 0) {
+                  <span class="text-xs text-slate-400">
+                    {{ 'inventory.noMovements' | transloco }}
+                  </span>
+                } @else {
+                  <table class="inventory__movements">
+                    <thead>
+                      <tr>
+                        <th>{{ 'inventory.col.date' | transloco }}</th>
+                        <th>{{ 'inventory.col.direction' | transloco }}</th>
+                        <th>{{ 'inventory.col.qty' | transloco }}</th>
+                        <th>{{ 'inventory.col.unitCost' | transloco }}</th>
+                        <th>{{ 'inventory.col.refType' | transloco }}</th>
+                        <th>{{ 'inventory.col.user' | transloco }}</th>
+                        <th>{{ 'inventory.col.note' | transloco }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (m of movementsOf(row.id); track m.id) {
+                        <tr [attr.data-testid]="'movement-row-' + m.id">
+                          <td>{{ m.movedAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}</td>
+                          <td>
+                            <span
+                              class="inventory__dir"
+                              [class.inventory__dir--in]="m.direction === StockMovementDirection.In"
+                              [class.inventory__dir--out]="
+                                m.direction === StockMovementDirection.Out
+                              "
+                            >
+                              {{ 'inventory.direction.' + directionKeys[m.direction] | transloco }}
+                            </span>
+                          </td>
+                          <td class="font-semibold">{{ m.qty }}</td>
+                          <td>{{ m.unitCost | money }}</td>
+                          <td>{{ 'inventory.refType.' + refTypeKeys[m.refType] | transloco }}</td>
+                          <td>{{ m.userName || '—' }}</td>
+                          <td class="text-slate-500">{{ m.note || '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="10">
+              <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+                <i class="fa-solid fa-boxes-stacked text-2xl" aria-hidden="true"></i>
+                <span>{{ 'inventory.empty' | transloco }}</span>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+</div>
+
+<!-- ============ Kategori formu ============ -->
+<p-dialog
+  [visible]="categoryFormVisible()"
+  (visibleChange)="categoryFormVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '24rem' }"
+  [header]="(editingCategory() ? 'inventory.editCategory' : 'inventory.newCategory') | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1" data-testid="category-dialog">
+    <div class="flex flex-col gap-1">
+      <label for="cat-name" class="text-sm font-medium">
+        {{ 'inventory.form.categoryName' | transloco }} *
+      </label>
+      <input
+        id="cat-name"
+        pInputText
+        class="w-full"
+        [ngModel]="categoryName()"
+        (ngModelChange)="categoryName.set($event)"
+        data-testid="category-name"
+      />
+    </div>
+    <div class="flex justify-end gap-2 pt-1">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="categoryFormVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        [loading]="categorySaving()"
+        [disabled]="!categoryName().trim()"
+        data-testid="category-save"
+        (onClick)="saveCategory()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- ============ Malzeme formu ============ -->
+<p-dialog
+  [visible]="itemFormVisible()"
+  (visibleChange)="itemFormVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+  [header]="(editingItem() ? 'inventory.editItem' : 'inventory.newItem') | transloco"
+>
+  <div class="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2" data-testid="item-dialog">
+    <div class="flex flex-col gap-1 sm:col-span-2">
+      <label for="it-name" class="text-sm font-medium">
+        {{ 'inventory.form.name' | transloco }} *
+      </label>
+      <input
+        id="it-name"
+        pInputText
+        class="w-full"
+        [ngModel]="itemName()"
+        (ngModelChange)="itemName.set($event)"
+        data-testid="item-name"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="it-category" class="text-sm font-medium">
+        {{ 'inventory.form.category' | transloco }}
+      </label>
+      <p-select
+        inputId="it-category"
+        [options]="categoryOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="itemCategoryId()"
+        (ngModelChange)="itemCategoryId.set($event)"
+        [showClear]="true"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'inventory.form.categoryPlaceholder' | transloco"
+        data-testid="item-category"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="it-unit" class="text-sm font-medium">
+        {{ 'inventory.form.unit' | transloco }}
+      </label>
+      <p-select
+        inputId="it-unit"
+        [options]="unitOptions()"
+        [editable]="true"
+        [ngModel]="itemUnit()"
+        (ngModelChange)="itemUnit.set($event)"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'inventory.form.unitPlaceholder' | transloco"
+        data-testid="item-unit"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="it-barcode" class="text-sm font-medium">
+        {{ 'inventory.form.barcode' | transloco }}
+      </label>
+      <input
+        id="it-barcode"
+        pInputText
+        class="w-full"
+        [ngModel]="itemBarcode()"
+        (ngModelChange)="itemBarcode.set($event)"
+        data-testid="item-barcode"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="it-min" class="text-sm font-medium">
+        {{ 'inventory.form.minQty' | transloco }}
+      </label>
+      <p-inputnumber
+        inputId="it-min"
+        [ngModel]="itemMinQty()"
+        (ngModelChange)="itemMinQty.set($event)"
+        [min]="0"
+        [maxFractionDigits]="2"
+        [fluid]="true"
+        data-testid="item-min-qty"
+      />
+    </div>
+    <label class="flex cursor-pointer items-center gap-2 text-sm sm:col-span-2">
+      <p-checkbox
+        [ngModel]="itemIsActive()"
+        (ngModelChange)="itemIsActive.set($event)"
+        [binary]="true"
+        inputId="it-active"
+        data-testid="item-active"
+      />
+      {{ 'inventory.form.isActive' | transloco }}
+    </label>
+    <div class="flex justify-end gap-2 pt-1 sm:col-span-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="itemFormVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        [loading]="itemSaving()"
+        [disabled]="!itemName().trim()"
+        data-testid="item-save"
+        (onClick)="saveItem()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- ============ Hareket ekle ============ -->
+<p-dialog
+  [visible]="movementVisible()"
+  (visibleChange)="movementVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+  [header]="'inventory.addMovement' | transloco"
+>
+  @if (movementTarget(); as item) {
+    <div class="flex flex-col gap-3 pt-1" data-testid="movement-dialog">
+      <p class="m-0 text-sm text-slate-500">
+        {{ item.name }} ·
+        <span class="font-semibold text-slate-700">
+          {{ 'inventory.currentQtyLabel' | transloco: { qty: item.currentQty } }}
+        </span>
+      </p>
+      <div class="flex flex-col gap-1">
+        <span class="text-sm font-medium">{{ 'inventory.form.direction' | transloco }}</span>
+        <p-selectbutton
+          [options]="directionOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="movementDirection()"
+          (ngModelChange)="onDirectionChange($event)"
+          [allowEmpty]="false"
+          data-testid="movement-direction"
+        />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1">
+          <label for="mv-qty" class="text-sm font-medium">
+            {{ 'inventory.form.qty' | transloco }} *
+          </label>
+          <p-inputnumber
+            inputId="mv-qty"
+            [ngModel]="movementQty()"
+            (ngModelChange)="movementQty.set($event)"
+            [min]="0"
+            [maxFractionDigits]="2"
+            [fluid]="true"
+            data-testid="movement-qty"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="mv-cost" class="text-sm font-medium">
+            {{ 'inventory.form.unitCost' | transloco }}
+          </label>
+          <p-inputnumber
+            inputId="mv-cost"
+            [ngModel]="movementUnitCost()"
+            (ngModelChange)="movementUnitCost.set($event)"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [min]="0"
+            suffix=" ₺"
+            [fluid]="true"
+            data-testid="movement-unit-cost"
+          />
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="mv-reftype" class="text-sm font-medium">
+          {{ 'inventory.form.refType' | transloco }}
+        </label>
+        <p-select
+          inputId="mv-reftype"
+          [options]="refTypeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="movementRefType()"
+          (ngModelChange)="movementRefType.set($event)"
+          [fluid]="true"
+          appendTo="body"
+          data-testid="movement-ref-type"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="mv-note" class="text-sm font-medium">
+          {{ 'inventory.form.note' | transloco }}
+        </label>
+        <textarea
+          id="mv-note"
+          pTextarea
+          rows="2"
+          class="w-full"
+          [ngModel]="movementNote()"
+          (ngModelChange)="movementNote.set($event)"
+          data-testid="movement-note"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="movementVisible.set(false)"
+        />
+        <p-button
+          [label]="'common.save' | transloco"
+          [loading]="movementSaving()"
+          [disabled]="!movementQty()"
+          data-testid="movement-save"
+          (onClick)="saveMovement()"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>

@@ -1,0 +1,107 @@
+<div class="calendar-page">
+  <!-- Ust arac cubugu -->
+  <div class="calendar-page__toolbar dt-card">
+    <div class="calendar-page__nav">
+      <p-button
+        icon="fa-solid fa-chevron-left"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        data-testid="cal-prev"
+        (onClick)="navigate('prev')"
+      />
+      <p-button
+        [label]="'calendar.today' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="navigate('today')"
+      />
+      <p-button
+        icon="fa-solid fa-chevron-right"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        data-testid="cal-next"
+        (onClick)="navigate('next')"
+      />
+      <span class="calendar-page__title" data-testid="cal-title">{{ viewTitle() }}</span>
+    </div>
+
+    <div class="calendar-page__filters">
+      <p-selectbutton
+        [options]="viewOptions"
+        optionValue="value"
+        [allowEmpty]="false"
+        size="small"
+        [ngModel]="activeView"
+        (onChange)="changeView($event.value)"
+      >
+        <ng-template #item let-option>{{ option.labelKey | transloco }}</ng-template>
+      </p-selectbutton>
+
+      <p-multiselect
+        [options]="doctors()"
+        optionValue="id"
+        [(ngModel)]="selectedDoctorIds"
+        (onChange)="refetch()"
+        [placeholder]="'calendar.allDoctors' | transloco"
+        [showToggleAll]="true"
+        [filter]="false"
+        display="chip"
+        styleClass="calendar-page__doctors"
+        appendTo="body"
+      >
+        <ng-template #item let-doctor>
+          <span class="inline-flex items-center gap-2">
+            <span
+              class="inline-block h-2.5 w-2.5 rounded-full"
+              [style.background]="doctor.color ?? '#3b82f6'"
+            ></span>
+            {{ doctor.firstName }} {{ doctor.lastName }}
+          </span>
+        </ng-template>
+      </p-multiselect>
+
+      <label class="calendar-page__toggle">
+        <p-toggleswitch [(ngModel)]="showCancelled" (onChange)="refetch()" />
+        <span>{{ 'calendar.showCancelled' | transloco }}</span>
+      </label>
+
+      <p-button
+        [label]="'calendar.emptySlot' | transloco"
+        icon="fa-regular fa-square-plus"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="openCreate({ type: AppointmentTypeEmptySlot })"
+      />
+      <p-button
+        [label]="'calendar.newAppointment' | transloco"
+        icon="fa-solid fa-plus"
+        size="small"
+        data-testid="new-appointment-btn"
+        (onClick)="openCreate()"
+      />
+    </div>
+  </div>
+
+  <!-- Takvim -->
+  <div class="calendar-page__calendar dt-card">
+    <full-calendar #calendar [options]="calendarOptions" />
+  </div>
+</div>
+
+<app-appointment-dialog
+  [state]="dialogState()"
+  [doctors]="doctors()"
+  (saved)="onDialogSaved()"
+  (closed)="dialogState.set(null)"
+/>
+
+<app-appointment-detail-dialog
+  [appointment]="detailAppointment()"
+  (closed)="detailAppointment.set(null)"
+  (changed)="refetch()"
+  (edit)="openEdit($event)"
+/>

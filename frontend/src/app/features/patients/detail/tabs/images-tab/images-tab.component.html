@@ -1,0 +1,346 @@
+<div class="dt-card p-5 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h3 class="m-0 text-base font-semibold text-slate-700">{{ 'images.title' | transloco }}</h3>
+    <div class="flex gap-2">
+      <p-button
+        [label]="'images.compare' | transloco"
+        icon="fa-solid fa-table-columns"
+        size="small"
+        [severity]="compareMode() ? 'warn' : 'secondary'"
+        [outlined]="!compareMode()"
+        data-testid="compare-mode-btn"
+        (onClick)="toggleCompareMode()"
+      />
+      <p-button
+        [label]="'images.upload' | transloco"
+        icon="fa-solid fa-cloud-arrow-up"
+        size="small"
+        data-testid="upload-btn"
+        (onClick)="openUpload()"
+        *hasPermission="'media.upload'"
+      />
+    </div>
+  </div>
+
+  <!-- Kategori cipleri -->
+  <div class="flex gap-2 flex-wrap">
+    @for (chip of chips; track chip.labelKey) {
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer"
+        [class.bg-blue-600]="activeCategory() === chip.value"
+        [class.text-white]="activeCategory() === chip.value"
+        [class.border-blue-600]="activeCategory() === chip.value"
+        [class.bg-white]="activeCategory() !== chip.value"
+        [class.text-slate-600]="activeCategory() !== chip.value"
+        [class.border-slate-200]="activeCategory() !== chip.value"
+        [attr.data-testid]="'category-chip-' + (chip.value ?? 'all')"
+        (click)="activeCategory.set(chip.value)"
+      >
+        {{ chip.labelKey | transloco }}
+      </button>
+    }
+  </div>
+
+  @if (compareMode()) {
+    <div class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      {{ 'images.compareHint' | transloco }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="py-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+  } @else if (items().length === 0) {
+    <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+      <i class="fa-regular fa-images text-2xl" aria-hidden="true"></i>
+      <span>{{ 'images.empty' | transloco }}</span>
+    </div>
+  } @else {
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+      @for (item of items(); track item.id) {
+        <button
+          type="button"
+          class="group relative rounded-xl overflow-hidden border bg-slate-100 aspect-square cursor-pointer text-left p-0"
+          [class.border-slate-200]="!isSelectedForCompare(item)"
+          [class.border-amber-500]="isSelectedForCompare(item)"
+          [class.ring-2]="isSelectedForCompare(item)"
+          [class.ring-amber-400]="isSelectedForCompare(item)"
+          [attr.data-testid]="'media-card-' + item.id"
+          (click)="openItem(item)"
+        >
+          @if (item.hasThumbnail) {
+            <app-media-image [mediaId]="item.id" kind="thumbnail" [alt]="item.fileName" />
+          } @else {
+            <div class="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400">
+              <i
+                [class]="isPdf(item) ? 'fa-regular fa-file-pdf text-3xl text-red-400' : 'fa-regular fa-file-lines text-3xl'"
+                aria-hidden="true"
+              ></i>
+              <span class="text-[10px] px-2 text-center truncate max-w-full">{{ item.fileName }}</span>
+            </div>
+          }
+          <div
+            class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-6 pb-1.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <div class="text-[11px] truncate">{{ item.fileName }}</div>
+            <div class="text-[10px] text-white/80">
+              {{ categoryLabelKey(item.category) | transloco }}
+              @if (item.toothNumber) {
+                · {{ 'images.tooth' | transloco }} {{ item.toothNumber }}
+              }
+            </div>
+          </div>
+          @if (isSelectedForCompare(item)) {
+            <span
+              class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center"
+            >
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+            </span>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>
+
+<!-- Upload dialogu -->
+<p-dialog
+  [visible]="uploadVisible()"
+  (visibleChange)="uploadVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+  [header]="'images.uploadTitle' | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1">
+    <p-fileupload
+      #uploader
+      mode="advanced"
+      [multiple]="true"
+      [customUpload]="true"
+      [showUploadButton]="false"
+      [showCancelButton]="false"
+      accept="image/*,application/pdf"
+      [maxFileSize]="25000000"
+      (onSelect)="onFilesSelected($event)"
+      (onRemove)="onFileRemoved($event)"
+      [chooseLabel]="'images.chooseFiles' | transloco"
+      data-testid="file-upload"
+    >
+      <ng-template #empty>
+        <div class="flex flex-col items-center gap-2 py-6 text-slate-400">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl" aria-hidden="true"></i>
+          <span class="text-sm">{{ 'images.dragDrop' | transloco }}</span>
+        </div>
+      </ng-template>
+    </p-fileupload>
+
+    <form [formGroup]="uploadForm" class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="up-category" class="text-sm font-medium">
+          {{ 'images.form.category' | transloco }}
+        </label>
+        <p-select
+          inputId="up-category"
+          formControlName="category"
+          [options]="uploadCategoryOptions"
+          optionValue="value"
+          [fluid]="true"
+          appendTo="body"
+          data-testid="upload-category"
+        >
+          <ng-template #selectedItem let-opt>
+            @if (opt) { {{ opt.labelKey | transloco }} }
+          </ng-template>
+          <ng-template #item let-opt>{{ opt.labelKey | transloco }}</ng-template>
+        </p-select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="up-date" class="text-sm font-medium">{{ 'images.form.takenAt' | transloco }}</label>
+        <p-datepicker
+          inputId="up-date"
+          formControlName="takenAt"
+          dateFormat="dd.mm.yy"
+          [showIcon]="true"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="up-tooth" class="text-sm font-medium">
+          {{ 'images.form.toothNumber' | transloco }}
+        </label>
+        <input id="up-tooth" pInputText formControlName="toothNumber" maxlength="10" data-testid="upload-tooth" />
+      </div>
+      <div class="flex flex-col gap-1 col-span-2">
+        <label for="up-desc" class="text-sm font-medium">
+          {{ 'images.form.description' | transloco }}
+        </label>
+        <textarea id="up-desc" pTextarea formControlName="description" rows="2" class="w-full" data-testid="upload-desc"></textarea>
+      </div>
+    </form>
+
+    <div class="flex justify-end gap-2 pt-1">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="uploadVisible.set(false)"
+      />
+      <p-button
+        [label]="'images.uploadAction' | transloco: { count: pendingFiles().length }"
+        icon="fa-solid fa-cloud-arrow-up"
+        data-testid="upload-save"
+        [disabled]="pendingFiles().length === 0"
+        [loading]="uploading()"
+        (onClick)="upload()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Lightbox -->
+<p-dialog
+  [visible]="lightboxIndex() !== null"
+  (visibleChange)="!$event ? lightboxIndex.set(null) : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '64rem', maxWidth: '96vw' }"
+  styleClass="images-lightbox"
+  [header]="lightboxItem()?.fileName ?? ''"
+>
+  @if (lightboxItem(); as item) {
+    <div class="flex flex-col gap-3" data-testid="lightbox">
+      <div class="relative bg-slate-900 rounded-lg overflow-hidden" style="height: 60vh">
+        @if (isImage(item)) {
+          <app-media-image
+            [mediaId]="item.id"
+            kind="full"
+            fit="contain"
+            [alt]="item.fileName"
+            data-testid="lightbox-image"
+          />
+        } @else {
+          <div class="w-full h-full flex flex-col items-center justify-center gap-3 text-slate-400">
+            <i class="fa-regular fa-file-pdf text-5xl" aria-hidden="true"></i>
+            <span>{{ item.fileName }}</span>
+            <p-button
+              [label]="'images.download' | transloco"
+              icon="fa-solid fa-download"
+              size="small"
+              (onClick)="download(item)"
+            />
+          </div>
+        }
+        <button
+          type="button"
+          class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 disabled:opacity-30 cursor-pointer"
+          [disabled]="lightboxIndex() === 0"
+          data-testid="lightbox-prev"
+          (click)="lightboxPrev()"
+        >
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 disabled:opacity-30 cursor-pointer"
+          [disabled]="lightboxIndex() === viewables().length - 1"
+          data-testid="lightbox-next"
+          (click)="lightboxNext()"
+        >
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
+          <span>
+            <i class="fa-regular fa-folder mr-1" aria-hidden="true"></i>
+            {{ categoryLabelKey(item.category) | transloco }}
+          </span>
+          @if (item.takenAt) {
+            <span>
+              <i class="fa-regular fa-calendar mr-1" aria-hidden="true"></i>
+              {{ item.takenAt | trDate: 'dd.MM.yyyy' : true }}
+            </span>
+          }
+          @if (item.toothNumber) {
+            <span>
+              <i class="fa-solid fa-tooth mr-1" aria-hidden="true"></i>
+              {{ item.toothNumber }}
+            </span>
+          }
+          <span>
+            <i class="fa-regular fa-hard-drive mr-1" aria-hidden="true"></i>
+            {{ formatSize(item.sizeBytes) }}
+          </span>
+          @if (item.uploadedByName) {
+            <span>
+              <i class="fa-regular fa-user mr-1" aria-hidden="true"></i>
+              {{ item.uploadedByName }}
+            </span>
+          }
+          @if (item.description) {
+            <span class="italic">{{ item.description }}</span>
+          }
+        </div>
+        <div class="flex gap-2">
+          <p-button
+            [label]="'images.download' | transloco"
+            icon="fa-solid fa-download"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            data-testid="lightbox-download"
+            (onClick)="download(item)"
+          />
+          <p-button
+            [label]="'common.delete' | transloco"
+            icon="fa-regular fa-trash-can"
+            size="small"
+            severity="danger"
+            [outlined]="true"
+            data-testid="lightbox-delete"
+            (onClick)="remove(item)"
+            *hasPermission="'media.delete'"
+          />
+        </div>
+      </div>
+    </div>
+  }
+</p-dialog>
+
+<!-- Karsilastirma -->
+<p-dialog
+  [visible]="compareVisible()"
+  (visibleChange)="!$event ? closeCompare() : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '80rem', maxWidth: '97vw' }"
+  [header]="'images.compareTitle' | transloco"
+>
+  <div class="grid grid-cols-2 gap-3" data-testid="compare-dialog">
+    @for (item of compareSelection(); track item.id) {
+      <div class="flex flex-col gap-2">
+        <div class="bg-slate-900 rounded-lg overflow-hidden" style="height: 60vh">
+          <app-media-image [mediaId]="item.id" kind="full" fit="contain" [alt]="item.fileName" />
+        </div>
+        <div class="text-xs text-slate-500 text-center">
+          {{ item.fileName }}
+          @if (item.takenAt) {
+            · {{ item.takenAt | trDate: 'dd.MM.yyyy' : true }}
+          }
+        </div>
+      </div>
+    }
+  </div>
+  <div class="flex justify-end pt-3">
+    <p-button
+      [label]="'common.close' | transloco"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="closeCompare()"
+    />
+  </div>
+</p-dialog>

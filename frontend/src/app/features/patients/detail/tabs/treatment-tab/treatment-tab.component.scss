@@ -1,0 +1,376 @@
+.ttab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 3 kolon: katalog 260px + sema esnek + kayit paneli 300px */
+.ttab__main {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 300px;
+  gap: 1rem;
+  align-items: stretch;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 240px minmax(0, 1fr);
+
+    .ttab__entry {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 860px) {
+    grid-template-columns: minmax(0, 1fr);
+
+    .ttab__catalog,
+    .ttab__entry {
+      grid-column: auto;
+    }
+  }
+}
+
+.ttab__panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.ttab__catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  min-height: 0;
+}
+
+.ttab__search {
+  display: block;
+}
+
+.ttab__list {
+  flex: 1;
+  min-height: 12rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-right: 0.15rem;
+}
+
+.ttab__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem 0.5rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--cat-color, #94a3b8);
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: #334155;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    box-shadow 0.12s;
+
+  &:hover {
+    background: #f8fafc;
+  }
+
+  &--active {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    border-left-color: var(--cat-color, #3b82f6);
+    box-shadow: 0 0 0 1px #93c5fd inset;
+  }
+}
+
+.ttab__item-name {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.ttab__item-price {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.ttab__chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.ttab__chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ttab__mouthwide {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+}
+
+.ttab__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.ttab__legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.ttab__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.ttab__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ttab__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ttab__layer-toggle {
+  display: block;
+
+  ::ng-deep .p-selectbutton {
+    width: 100%;
+    display: flex;
+
+    .p-togglebutton {
+      flex: 1;
+    }
+  }
+}
+
+.ttab__active-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--cat-color, #94a3b8);
+  border-radius: 8px;
+  background: #f8fafc;
+  margin-top: 0.35rem;
+}
+
+.ttab__active-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ttab__active-price {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.ttab__selection-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ttab__clear {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #2563eb;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.ttab__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+}
+
+.ttab__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.3rem 0.22rem 0.6rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.ttab__chip-surfaces {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  background: #dbeafe;
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+
+.ttab__chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 0.7rem;
+
+  &:hover {
+    background: #bfdbfe;
+  }
+}
+
+.ttab__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.ttab__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.ttab__muted {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.ttab__icd-item {
+  font-size: 0.85rem;
+}
+
+.ttab__icd-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #b45309;
+  border-radius: 6px;
+  padding: 0.05rem 0.35rem;
+  white-space: nowrap;
+}
+
+.ttab__general-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 6px;
+  padding: 0.1rem 0.45rem;
+  white-space: nowrap;
+}
+
+.ttab__history {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ttab__history-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ttab__spacer {
+  flex: 1;
+}
+
+.ttab__desc-cell {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+}
+
+.ttab__discount {
+  font-size: 0.72rem;
+  color: #dc2626;
+}
+
+.ttab__edit-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.65rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.ttab__bulk-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  td {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+}

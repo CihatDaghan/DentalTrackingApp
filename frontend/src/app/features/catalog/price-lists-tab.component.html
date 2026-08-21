@@ -1,0 +1,234 @@
+<div class="pl">
+  <!-- Sol: tarifeler -->
+  <aside class="pl__sidebar dt-card">
+    <div class="pl__sidebar-head">
+      <h3 class="pl__title">{{ 'catalog.priceLists' | transloco }}</h3>
+      <ng-container *hasPermission="'settings.update'">
+        <p-button
+          icon="fa-solid fa-plus"
+          size="small"
+          [text]="true"
+          [pTooltip]="'catalog.newPriceList' | transloco"
+          tooltipPosition="top"
+          data-testid="new-pricelist-btn"
+          (onClick)="openDialog(null)"
+        />
+      </ng-container>
+    </div>
+
+    <div class="pl__lists" data-testid="pricelist-list">
+      @for (list of lists(); track list.id) {
+        <div
+          class="pl__list"
+          [class.pl__list--active]="selectedList()?.id === list.id"
+          [attr.data-testid]="'pricelist-' + list.id"
+          role="button"
+          tabindex="0"
+          (click)="selectList(list)"
+          (keydown.enter)="selectList(list)"
+        >
+          <div class="pl__list-main">
+            <span class="pl__list-name">{{ list.name }}</span>
+            <span class="pl__list-meta">
+              {{ list.currencyCode.trim() }}
+              @if (list.validFrom) {
+                · {{ list.validFrom | trDate: 'dd.MM.yyyy' : true }}
+              }
+              · {{ 'catalog.itemCount' | transloco: { count: list.itemCount } }}
+            </span>
+          </div>
+          @if (list.isDefault) {
+            <p-tag [value]="'catalog.default' | transloco" severity="info" data-testid="default-badge" />
+          }
+          <span class="pl__list-actions" *hasPermission="'settings.update'">
+            @if (!list.isDefault) {
+              <button
+                type="button"
+                class="pl__icon-btn"
+                [pTooltip]="'catalog.makeDefault' | transloco"
+                tooltipPosition="top"
+                [attr.data-testid]="'make-default-' + list.id"
+                (click)="$event.stopPropagation(); makeDefault(list)"
+              >
+                <i class="fa-regular fa-star" aria-hidden="true"></i>
+              </button>
+            }
+            <button
+              type="button"
+              class="pl__icon-btn"
+              [attr.data-testid]="'edit-pricelist-' + list.id"
+              (click)="$event.stopPropagation(); openDialog(list)"
+            >
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+            </button>
+            @if (!list.isDefault) {
+              <button
+                type="button"
+                class="pl__icon-btn pl__icon-btn--danger"
+                (click)="$event.stopPropagation(); deleteList(list)"
+              >
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              </button>
+            }
+          </span>
+        </div>
+      } @empty {
+        <div class="pl__muted">{{ 'table.empty' | transloco }}</div>
+      }
+    </div>
+  </aside>
+
+  <!-- Sag: kalemler -->
+  <section class="pl__main dt-card">
+    @if (selectedList(); as list) {
+      <div class="pl__toolbar">
+        <div class="pl__toolbar-title">
+          <h3 class="pl__title">{{ list.name }}</h3>
+          <span class="pl__muted">{{ list.currencyCode.trim() }}</span>
+        </div>
+        <input
+          pInputText
+          type="text"
+          class="pl__search"
+          [(ngModel)]="itemFilter"
+          data-testid="pricelist-item-search"
+          [placeholder]="'treatment.searchPlaceholder' | transloco"
+        />
+        <span class="pl__spacer"></span>
+        <ng-container *hasPermission="'settings.update'">
+          @if (dirtyCount() > 0) {
+            <span class="pl__dirty">{{ 'catalog.dirtyItems' | transloco: { count: dirtyCount() } }}</span>
+          }
+          <p-button
+            [label]="'common.save' | transloco"
+            icon="fa-solid fa-floppy-disk"
+            size="small"
+            [disabled]="dirtyCount() === 0"
+            [loading]="itemsSaving()"
+            data-testid="pricelist-items-save"
+            (onClick)="saveItems()"
+          />
+        </ng-container>
+      </div>
+
+      <p-table
+        [value]="filteredItems()"
+        [loading]="itemsLoading()"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="30rem"
+        size="small"
+        dataKey="treatmentDefinitionId"
+        data-testid="pricelist-items-table"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 7rem">{{ 'catalog.columns.code' | transloco }}</th>
+            <th>{{ 'treatment.columns.treatment' | transloco }}</th>
+            <th style="width: 12rem" class="text-right">{{ 'catalog.columns.price' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-item>
+          <tr
+            [class.pl__row--dirty]="item.price !== item.originalPrice"
+            [attr.data-testid]="'price-item-' + item.treatmentDefinitionId"
+          >
+            <td class="font-mono text-xs">{{ item.treatmentCode }}</td>
+            <td>{{ item.treatmentName }}</td>
+            <td class="text-right">
+              <ng-container *hasPermission="'settings.update'">
+                <p-inputnumber
+                  [(ngModel)]="item.price"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  locale="tr-TR"
+                  [min]="0"
+                  size="small"
+                  inputStyleClass="text-right"
+                  [attr.data-testid]="'price-input-' + item.treatmentDefinitionId"
+                />
+              </ng-container>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="3">
+              <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+                <i class="fa-solid fa-tags text-2xl" aria-hidden="true"></i>
+                <span>{{ 'table.empty' | transloco }}</span>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <div class="pl__empty">
+        <i class="fa-solid fa-tags text-2xl" aria-hidden="true"></i>
+        <span>{{ 'catalog.selectPriceList' | transloco }}</span>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Tarife dialogu -->
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '26rem' }"
+  [header]="(editingList ? 'catalog.editPriceList' : 'catalog.newPriceList') | transloco"
+>
+  <form [formGroup]="listForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveList()">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="pl-name">{{ 'catalog.form.listName' | transloco }} *</label>
+      <input id="pl-name" pInputText formControlName="name" data-testid="pricelist-name-input" />
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="pl-currency">{{ 'catalog.form.currency' | transloco }}</label>
+        <p-select
+          inputId="pl-currency"
+          formControlName="currencyCode"
+          [options]="currencyOptions"
+          optionValue="value"
+          optionLabel="label"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="pl-valid">{{ 'catalog.form.validFrom' | transloco }}</label>
+        <p-datepicker
+          inputId="pl-valid"
+          formControlName="validFrom"
+          dateFormat="dd.mm.yy"
+          [showIcon]="true"
+          [showClear]="true"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <p-checkbox formControlName="isDefault" [binary]="true" inputId="pl-default" />
+      {{ 'catalog.form.isDefault' | transloco }}
+    </label>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="dialogVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        [loading]="dialogSaving()"
+        data-testid="pricelist-save-btn"
+      />
+    </div>
+  </form>
+</p-dialog>

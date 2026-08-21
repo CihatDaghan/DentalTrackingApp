@@ -1,0 +1,174 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '52rem', maxWidth: '96vw' }"
+  [header]="'consent.createTitle' | transloco"
+>
+  <div class="flex flex-col gap-4 pt-1" data-testid="consent-dialog">
+    <!-- Sablon secimi + olustur -->
+    <div class="flex items-end gap-3 flex-wrap" *hasPermission="'consent.create'">
+      <div class="flex flex-col gap-1 grow min-w-64">
+        <label for="consent-template" class="text-sm font-medium">
+          {{ 'consent.template' | transloco }}
+        </label>
+        <p-select
+          inputId="consent-template"
+          [options]="templates()"
+          optionLabel="name"
+          optionValue="id"
+          [ngModel]="selectedTemplateId()"
+          (ngModelChange)="selectedTemplateId.set($event)"
+          [fluid]="true"
+          appendTo="body"
+          data-testid="consent-template-select"
+        />
+      </div>
+      <p-button
+        [label]="'consent.createAndPreview' | transloco"
+        icon="fa-solid fa-file-circle-plus"
+        data-testid="consent-create"
+        [loading]="creating()"
+        [disabled]="selectedTemplateId() == null"
+        (onClick)="create()"
+      />
+    </div>
+
+    <!-- Onizleme + aksiyonlar -->
+    @if (activeConsent(); as consent) {
+      <div class="border border-slate-200 rounded-lg flex flex-col" data-testid="consent-preview">
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="font-medium text-slate-700">{{ consent.templateName }}</span>
+            <app-status-tag kind="consent" [value]="consent.status" />
+          </div>
+          <div class="flex gap-2">
+            @if (canTabletSign(consent)) {
+              <p-button
+                [label]="'consent.tabletSign' | transloco"
+                icon="fa-solid fa-tablet-screen-button"
+                size="small"
+                data-testid="tablet-sign-btn"
+                (onClick)="openTabletSign()"
+                *hasPermission="'consent.create'"
+              />
+              <p-button
+                [label]="'consent.sendSms' | transloco"
+                icon="fa-regular fa-comment-dots"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="send-sms-btn"
+                [loading]="sendingSms()"
+                (onClick)="sendSms()"
+                *hasPermission="'consent.send'"
+              />
+            }
+            @if (consent.pdfFileId != null) {
+              <p-button
+                [label]="'consent.downloadPdf' | transloco"
+                icon="fa-regular fa-file-pdf"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="preview-pdf-btn"
+                (onClick)="downloadPdf(consent)"
+              />
+            }
+          </div>
+        </div>
+        @if (smsResult(); as sms) {
+          <div class="mx-4 mt-3 text-xs bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-3 py-2 flex flex-col gap-1" data-testid="sms-result">
+            <span>
+              <i class="fa-regular fa-paper-plane mr-1" aria-hidden="true"></i>
+              {{ 'consent.smsSentTo' | transloco: { phone: sms.sentToPhone } }}
+            </span>
+            @if (sms.publicUrl) {
+              <a [href]="sms.publicUrl" target="_blank" rel="noopener" class="underline break-all" data-testid="sms-link">
+                {{ sms.publicUrl }}
+              </a>
+            }
+            <span class="text-blue-600">
+              {{ 'consent.linkExpires' | transloco }}: {{ sms.expiresAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+            </span>
+          </div>
+        }
+        <!-- Angular [innerHTML] sanitizasyonu devrede (script vb. ayiklanir). -->
+        <div
+          class="max-h-72 overflow-y-auto px-4 py-3 text-sm text-slate-600 leading-relaxed"
+          [innerHTML]="consent.renderedHtml"
+        ></div>
+      </div>
+    }
+
+    <!-- Gecmis -->
+    <div class="flex flex-col gap-2">
+      <h4 class="m-0 text-sm font-semibold text-slate-600">
+        {{ 'consent.historyTitle' | transloco }}
+      </h4>
+      <p-table
+        [value]="history()"
+        [loading]="historyLoading()"
+        [rowHover]="true"
+        styleClass="p-datatable-sm"
+      >
+        <ng-template #header>
+          <tr>
+            <th>{{ 'consent.columns.date' | transloco }}</th>
+            <th>{{ 'consent.columns.template' | transloco }}</th>
+            <th>{{ 'consent.columns.status' | transloco }}</th>
+            <th style="width: 9rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-consent>
+          <tr [attr.data-testid]="'consent-row-' + consent.id">
+            <td class="whitespace-nowrap">{{ consent.createdAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}</td>
+            <td>{{ consent.templateName }}</td>
+            <td><app-status-tag kind="consent" [value]="consent.status" /></td>
+            <td>
+              <div class="flex justify-end gap-1">
+                <p-button
+                  icon="fa-regular fa-eye"
+                  size="small"
+                  severity="secondary"
+                  [text]="true"
+                  [pTooltip]="'consent.preview' | transloco"
+                  tooltipPosition="top"
+                  [attr.data-testid]="'consent-preview-' + consent.id"
+                  (onClick)="preview(consent)"
+                />
+                @if (consent.pdfFileId != null) {
+                  <p-button
+                    icon="fa-regular fa-file-pdf"
+                    size="small"
+                    severity="secondary"
+                    [text]="true"
+                    [pTooltip]="'consent.downloadPdf' | transloco"
+                    tooltipPosition="top"
+                    [attr.data-testid]="'consent-pdf-' + consent.id"
+                    (onClick)="downloadPdf(consent)"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4">
+              <div class="py-6 text-center text-slate-400">{{ 'consent.historyEmpty' | transloco }}</div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</p-dialog>
+
+<app-tablet-sign-dialog
+  [visible]="tabletVisible()"
+  (visibleChange)="tabletVisible.set($event)"
+  [consent]="activeConsent()"
+  (signed)="onSigned($event)"
+/>

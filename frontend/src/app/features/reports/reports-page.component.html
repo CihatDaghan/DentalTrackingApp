@@ -1,0 +1,52 @@
+<app-page-header [title]="'reports.title' | transloco" [subtitle]="subtitle()" />
+
+<div class="reports">
+  <!-- Sol dikey rapor menusu -->
+  <nav class="reports__menu dt-card" data-testid="reports-menu">
+    @for (tab of tabs; track tab.key) {
+      <button
+        type="button"
+        class="reports__menu-item"
+        [class.reports__menu-item--active]="tab.key === activeKey()"
+        (click)="select(tab.key)"
+        [attr.data-testid]="'report-tab-' + tab.key"
+      >
+        <i [class]="tab.icon" aria-hidden="true"></i>
+        <span>{{ 'reports.tabs.' + tab.labelKey | transloco }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="reports__body">
+    <app-report-filter-bar
+      [tab]="activeTab()"
+      [(state)]="filter"
+      [exporting]="exporting()"
+      (exportClick)="exportExcel()"
+    />
+
+    @switch (activeKey()) {
+      @case ('revenue') {
+        <app-revenue-report [query]="query()" />
+      }
+      @case ('income-expense') {
+        <app-income-expense-report [query]="query()" />
+      }
+      @case ('doctor-performance') {
+        <app-doctor-performance-report [query]="query()" />
+      }
+      @case ('collections') {
+        <app-collections-report [query]="query()" />
+      }
+      @case ('treatments') {
+        <app-treatments-report [query]="query()" />
+      }
+      @case ('appointments') {
+        <app-appointments-report [query]="query()" />
+      }
+      @case ('debtors') {
+        <app-debtors-report [query]="query()" />
+      }
+    }
+  </div>
+</div>

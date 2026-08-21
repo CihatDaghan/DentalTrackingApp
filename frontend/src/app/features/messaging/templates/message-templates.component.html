@@ -1,0 +1,424 @@
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_1fr]">
+  <!-- Sablon listesi -->
+  <div class="dt-card flex flex-col p-3" data-testid="template-list">
+    <div class="mb-2 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-slate-700">
+        {{ 'messaging.templates.listTitle' | transloco }}
+      </h3>
+      <p-button
+        [label]="'messaging.templates.new' | transloco"
+        icon="fa-solid fa-plus"
+        size="small"
+        [text]="true"
+        (onClick)="newTemplate()"
+        data-testid="template-new"
+        *hasPermission="'messaging.templates'"
+      />
+    </div>
+
+    @if (loading()) {
+      <div class="flex items-center gap-2 p-4 text-sm text-slate-500">
+        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+        {{ 'common.loading' | transloco }}
+      </div>
+    } @else if (sortedTemplates().length === 0) {
+      <div class="p-4 text-sm text-slate-500">{{ 'table.empty' | transloco }}</div>
+    } @else {
+      <ul class="flex max-h-[32rem] flex-col gap-1 overflow-y-auto">
+        @for (t of sortedTemplates(); track t.id) {
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:bg-slate-50"
+              [class.!border-blue-200]="draft().id === t.id"
+              [class.bg-blue-50]="draft().id === t.id"
+              [attr.data-testid]="'template-item-' + t.id"
+              (click)="edit(t)"
+            >
+              <i
+                [class]="channelIcons[t.channel]"
+                class="text-slate-400"
+                [style.color]="t.channel === MessageChannel.WhatsApp ? '#25d366' : '#3b82f6'"
+                aria-hidden="true"
+              ></i>
+              <span class="flex min-w-0 flex-1 flex-col">
+                <span class="truncate font-mono text-xs font-semibold text-slate-700">
+                  {{ t.templateKey }}
+                </span>
+                <span class="truncate text-xs text-slate-400">{{ t.body }}</span>
+              </span>
+              <span
+                class="rounded bg-slate-100 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase text-slate-500"
+              >
+                {{ t.locale }}
+              </span>
+              <app-status-tag kind="messageKind" [value]="t.kind" />
+              @if (!t.isActive) {
+                <i
+                  class="fa-solid fa-eye-slash text-slate-300"
+                  [pTooltip]="'messaging.templates.inactive' | transloco"
+                  aria-hidden="true"
+                ></i>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- Editor -->
+  <div class="dt-card p-4" data-testid="template-editor">
+    @if (!editorOpen()) {
+      <div class="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-slate-400">
+        <i class="fa-regular fa-file-lines text-3xl" aria-hidden="true"></i>
+        <p class="text-sm">{{ 'messaging.templates.pickHint' | transloco }}</p>
+      </div>
+    } @else {
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div class="flex flex-col gap-1">
+            <label for="tpl-key" class="text-sm font-medium">
+              {{ 'messaging.templates.key' | transloco }} *
+            </label>
+            <input
+              id="tpl-key"
+              pInputText
+              class="w-full"
+              [ngModel]="draft().templateKey"
+              (ngModelChange)="patch('templateKey', $event)"
+              data-testid="template-key"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium">
+              {{ 'messaging.templates.channel' | transloco }}
+            </label>
+            <p-selectbutton
+              [options]="channelOptions()"
+              [ngModel]="draft().channel"
+              (ngModelChange)="patch('channel', $event)"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              size="small"
+              data-testid="template-channel"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium">
+              {{ 'messaging.templates.locale' | transloco }}
+            </label>
+            <p-selectbutton
+              [options]="localeOptions"
+              [ngModel]="draft().locale"
+              (ngModelChange)="patch('locale', $event)"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              size="small"
+              data-testid="template-locale"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium">{{ 'messaging.templates.kind' | transloco }}</label>
+            <p-selectbutton
+              [options]="kindOptions()"
+              [ngModel]="draft().kind"
+              (ngModelChange)="patch('kind', $event)"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              size="small"
+              data-testid="template-kind"
+            />
+          </div>
+        </div>
+
+        <!-- Ticari mesaj uyarisi (IYS/KVKK) -->
+        @if (isCommercial()) {
+          <div
+            class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+            data-testid="commercial-warning"
+          >
+            <i class="fa-solid fa-shield-halved mt-0.5 text-red-500" aria-hidden="true"></i>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-sm font-semibold text-red-700">
+                {{ 'messaging.templates.commercialTitle' | transloco }}
+              </span>
+              <span class="text-sm text-red-700/90">
+                {{ 'messaging.templates.commercialWarning' | transloco }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Degisken chip'leri -->
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">
+            {{ 'messaging.templates.placeholders' | transloco }}
+          </span>
+          <div class="flex flex-wrap gap-1.5" data-testid="placeholder-chips">
+            @for (token of placeholders; track token) {
+              <button
+                type="button"
+                class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 font-mono text-xs text-blue-700 transition-colors hover:bg-blue-100"
+                [attr.data-testid]="'chip-' + token"
+                (click)="insertPlaceholder(token)"
+              >
+                {{ token }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Govde + SMS parca sayaci -->
+        <div class="flex flex-col gap-1">
+          <label for="tpl-body" class="text-sm font-medium">
+            {{ 'messaging.templates.body' | transloco }} *
+          </label>
+          <textarea
+            #bodyInput
+            id="tpl-body"
+            pTextarea
+            rows="5"
+            class="w-full font-mono text-sm"
+            [ngModel]="draft().body"
+            (ngModelChange)="patch('body', $event)"
+            data-testid="template-body"
+          ></textarea>
+
+          @if (isSms()) {
+            <div
+              class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs"
+              data-testid="sms-counter"
+            >
+              <span class="text-slate-600">
+                {{
+                  'messaging.templates.charCount'
+                    | transloco: { length: parts().length, perPart: parts().perPart }
+                }}
+              </span>
+              <span class="font-semibold text-slate-700" data-testid="sms-parts">
+                {{ 'messaging.templates.partCount' | transloco: { parts: parts().parts } }}
+              </span>
+              <span
+                class="rounded px-1.5 py-0.5 font-semibold"
+                [class.bg-emerald-100]="parts().encoding === 'gsm7'"
+                [class.text-emerald-700]="parts().encoding === 'gsm7'"
+                [class.bg-amber-100]="parts().encoding === 'ucs2'"
+                [class.text-amber-700]="parts().encoding === 'ucs2'"
+                data-testid="sms-encoding"
+              >
+                {{ 'messaging.templates.encoding.' + parts().encoding | transloco }}
+              </span>
+              @if (parts().encoding === 'ucs2') {
+                <span class="text-amber-700" data-testid="sms-unicode-hint">
+                  {{
+                    'messaging.templates.unicodeHint'
+                      | transloco: { chars: parts().nonGsmSample.join(' ') }
+                  }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+          <label class="flex items-center gap-2 text-sm text-slate-600">
+            <p-toggleswitch
+              [ngModel]="draft().isActive"
+              (ngModelChange)="patch('isActive', $event)"
+              data-testid="template-active"
+            />
+            {{ 'messaging.templates.active' | transloco }}
+          </label>
+          <div class="flex items-center gap-2">
+            @if (draft().id) {
+              <p-button
+                icon="fa-solid fa-trash"
+                size="small"
+                severity="danger"
+                [text]="true"
+                [pTooltip]="'common.delete' | transloco"
+                (onClick)="remove($any(draft()), $event)"
+                data-testid="template-delete"
+                *hasPermission="'messaging.templates'"
+              />
+            }
+            <p-button
+              [label]="'common.cancel' | transloco"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              (onClick)="editorOpen.set(false)"
+            />
+            <p-button
+              [label]="'common.save' | transloco"
+              icon="fa-solid fa-check"
+              size="small"
+              [loading]="saving()"
+              (onClick)="save()"
+              data-testid="template-save"
+              *hasPermission="'messaging.templates'"
+            />
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- WhatsApp sablonlari (Meta onay durumu) -->
+<div class="dt-card mt-4 p-3" data-testid="wa-template-list">
+  <div class="mb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <i class="fa-brands fa-whatsapp text-lg" style="color: #25d366" aria-hidden="true"></i>
+      <h3 class="text-sm font-semibold text-slate-700">
+        {{ 'messaging.templates.waTitle' | transloco }}
+      </h3>
+      <span class="text-xs text-slate-400">{{ 'messaging.templates.waHint' | transloco }}</span>
+    </div>
+    <p-button
+      [label]="'messaging.templates.waNew' | transloco"
+      icon="fa-solid fa-plus"
+      size="small"
+      [text]="true"
+      (onClick)="newWaTemplate()"
+      data-testid="wa-template-new"
+      *hasPermission="'messaging.templates'"
+    />
+  </div>
+
+  <p-table [value]="waTemplates()" [rowHover]="true" styleClass="p-datatable-sm">
+    <ng-template #header>
+      <tr>
+        <th style="width: 14rem">{{ 'messaging.templates.waName' | transloco }}</th>
+        <th style="width: 6rem">{{ 'messaging.templates.waLanguage' | transloco }}</th>
+        <th style="width: 9rem">{{ 'messaging.templates.waCategory' | transloco }}</th>
+        <th>{{ 'messaging.templates.waBody' | transloco }}</th>
+        <th style="width: 10rem">{{ 'messaging.templates.waStatus' | transloco }}</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr class="cursor-pointer" (click)="editWa(row)" [attr.data-testid]="'wa-template-' + row.id">
+        <td class="font-mono text-xs font-semibold text-slate-700">{{ row.templateName }}</td>
+        <td class="text-xs uppercase text-slate-500">{{ row.language }}</td>
+        <td class="text-xs text-slate-500">{{ row.category }}</td>
+        <td class="truncate text-xs text-slate-600">{{ row.bodySpec }}</td>
+        <td>
+          <app-status-tag
+            kind="waTemplate"
+            [value]="row.metaStatus"
+            [attr.data-testid]="'wa-status-' + row.id"
+          />
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="p-4 text-center text-sm text-slate-400">
+          {{ 'messaging.templates.waEmpty' | transloco }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- WhatsApp sablon dialogu -->
+<p-dialog
+  [visible]="waDialogOpen()"
+  (visibleChange)="waDialogOpen.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '34rem' }"
+  [header]="'messaging.templates.waDialogTitle' | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1">
+    <div class="flex flex-col gap-1">
+      <label for="wa-name" class="text-sm font-medium">
+        {{ 'messaging.templates.waName' | transloco }} *
+      </label>
+      <input
+        id="wa-name"
+        pInputText
+        class="w-full"
+        [ngModel]="waDraft().templateName"
+        (ngModelChange)="patchWa('templateName', $event)"
+        data-testid="wa-name"
+      />
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium">
+          {{ 'messaging.templates.waLanguage' | transloco }}
+        </label>
+        <p-selectbutton
+          [options]="localeOptions"
+          [ngModel]="waDraft().language"
+          (ngModelChange)="patchWa('language', $event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          size="small"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="wa-status" class="text-sm font-medium">
+          {{ 'messaging.templates.waStatus' | transloco }}
+        </label>
+        <p-select
+          inputId="wa-status"
+          [options]="waStatusOptions()"
+          [ngModel]="waDraft().metaStatus"
+          (ngModelChange)="patchWa('metaStatus', $event)"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+          data-testid="wa-status-select"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="wa-category" class="text-sm font-medium">
+        {{ 'messaging.templates.waCategory' | transloco }}
+      </label>
+      <input
+        id="wa-category"
+        pInputText
+        class="w-full"
+        [ngModel]="waDraft().category"
+        (ngModelChange)="patchWa('category', $event)"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="wa-body" class="text-sm font-medium">
+        {{ 'messaging.templates.waBody' | transloco }} *
+      </label>
+      <textarea
+        id="wa-body"
+        pTextarea
+        rows="4"
+        class="w-full font-mono text-sm"
+        [ngModel]="waDraft().bodySpec"
+        (ngModelChange)="patchWa('bodySpec', $event)"
+        data-testid="wa-body"
+      ></textarea>
+      <span class="text-xs text-slate-400">{{ 'messaging.templates.waBodyHint' | transloco }}</span>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="waDialogOpen.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        [loading]="waSaving()"
+        (onClick)="saveWa()"
+        data-testid="wa-save"
+      />
+    </div>
+  </div>
+</p-dialog>

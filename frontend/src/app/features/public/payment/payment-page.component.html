@@ -1,0 +1,108 @@
+<div class="pay-page">
+  @switch (state()) {
+    @case ('loading') {
+      <div class="pay-page__status">
+        <i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
+        <span>{{ 'common.loading' | transloco }}</span>
+      </div>
+    }
+    @case ('gone') {
+      <div class="pay-page__status" data-testid="payment-gone">
+        <span class="pay-page__status-icon pay-page__status-icon--warn">
+          <i class="fa-regular fa-hourglass-half" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.goneTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.goneMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('error') {
+      <div class="pay-page__status" data-testid="payment-error">
+        <span class="pay-page__status-icon pay-page__status-icon--warn">
+          <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.errorTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.errorMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('paid') {
+      <div class="pay-page__status" data-testid="payment-already-paid">
+        <span class="pay-page__status-icon pay-page__status-icon--success">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.alreadyPaidTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.alreadyPaidMessage' | transloco }}</p>
+        <a
+          class="pay-page__link"
+          [routerLink]="['/p', 'payment', token(), 'result']"
+          data-testid="payment-view-receipt"
+        >
+          {{ 'publicPayment.viewReceipt' | transloco }}
+        </a>
+      </div>
+    }
+    @case ('view') {
+      @if (view(); as v) {
+        <div class="pay-page__card" data-testid="payment-view">
+          <header class="pay-page__header">
+            <i class="fa-solid fa-tooth" aria-hidden="true"></i>
+            <div>
+              <h1 data-testid="payment-clinic">{{ v.clinicName }}</h1>
+              <span>{{ 'publicPayment.patientLabel' | transloco }}: {{ v.patientName }}</span>
+            </div>
+          </header>
+
+          <div class="pay-page__amount-box">
+            <span class="pay-page__amount-label">
+              {{ 'publicPayment.amountLabel' | transloco }}
+            </span>
+            <span class="pay-page__amount" data-testid="payment-amount">{{ amountText() }}</span>
+            @if (v.description) {
+              <span class="pay-page__description" data-testid="payment-description">
+                {{ v.description }}
+              </span>
+            }
+          </div>
+
+          <!-- Kart bilgisi bu sayfada ISTENMEZ -->
+          <div class="pay-page__secure" data-testid="payment-secure-note">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            <div>
+              <strong>{{ 'publicPayment.secureTitle' | transloco }}</strong>
+              <p>{{ 'publicPayment.secureMessage' | transloco }}</p>
+            </div>
+          </div>
+
+          <p-button
+            [label]="'publicPayment.pay' | transloco"
+            icon="fa-solid fa-credit-card"
+            styleClass="w-full"
+            size="large"
+            [disabled]="!canPay()"
+            (onClick)="pay()"
+            data-testid="payment-pay-btn"
+          />
+
+          @if (!canPay()) {
+            <p class="pay-page__note" data-testid="payment-unavailable">
+              {{ 'publicPayment.unavailable' | transloco }}
+            </p>
+          }
+
+          @if (v.expiresAtUtc) {
+            <p class="pay-page__note">
+              {{ 'publicPayment.expiresHint' | transloco }}
+            </p>
+          }
+
+          <a
+            class="pay-page__link"
+            [routerLink]="['/p', 'payment', token(), 'result']"
+            data-testid="payment-check-status"
+          >
+            {{ 'publicPayment.checkStatus' | transloco }}
+          </a>
+        </div>
+      }
+    }
+  }
+</div>

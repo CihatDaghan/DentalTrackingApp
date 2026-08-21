@@ -1,0 +1,145 @@
+<div class="dt-card p-5 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h3 class="m-0 text-base font-semibold text-slate-700">{{ 'notes.title' | transloco }}</h3>
+    <p-button
+      [label]="'notes.new' | transloco"
+      icon="fa-regular fa-note-sticky"
+      size="small"
+      data-testid="new-note-btn"
+      (onClick)="openNew()"
+      *hasPermission="'note.create'"
+    />
+  </div>
+
+  @if (loading()) {
+    <div class="py-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+  } @else if (sortedNotes().length === 0) {
+    <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+      <i class="fa-regular fa-note-sticky text-2xl" aria-hidden="true"></i>
+      <span>{{ 'notes.empty' | transloco }}</span>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      @for (note of sortedNotes(); track note.id) {
+        <div
+          class="rounded-xl border border-black/5 p-4 flex flex-col gap-2 shadow-sm"
+          [style.background]="note.colorHex ?? '#f1f5f9'"
+          [attr.data-testid]="'note-card-' + note.id"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-xs text-slate-600">
+              @if (note.isPinned) {
+                <i
+                  class="fa-solid fa-thumbtack text-amber-600"
+                  [pTooltip]="'notes.pinned' | transloco"
+                  tooltipPosition="top"
+                  aria-hidden="true"
+                ></i>
+              }
+              <span class="font-semibold">{{ note.authorName }}</span>
+            </div>
+            @if (canManage(note)) {
+              <div class="flex gap-0.5 -mt-1 -mr-1">
+                <p-button
+                  [icon]="note.isPinned ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"
+                  size="small"
+                  severity="secondary"
+                  [text]="true"
+                  [pTooltip]="(note.isPinned ? 'notes.unpin' : 'notes.pin') | transloco"
+                  tooltipPosition="top"
+                  [attr.data-testid]="'pin-note-' + note.id"
+                  (onClick)="togglePin(note)"
+                />
+                <p-button
+                  icon="fa-regular fa-pen-to-square"
+                  size="small"
+                  severity="secondary"
+                  [text]="true"
+                  [pTooltip]="'common.edit' | transloco"
+                  tooltipPosition="top"
+                  (onClick)="openEdit(note)"
+                />
+                <p-button
+                  icon="fa-regular fa-trash-can"
+                  size="small"
+                  severity="danger"
+                  [text]="true"
+                  [pTooltip]="'common.delete' | transloco"
+                  tooltipPosition="top"
+                  (onClick)="remove(note)"
+                />
+              </div>
+            }
+          </div>
+          <p class="m-0 text-sm text-slate-700 whitespace-pre-wrap break-words">
+            {{ note.noteText }}
+          </p>
+          <div class="text-[11px] text-slate-500 mt-auto">
+            {{ note.createdAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+            @if (note.updatedAtUtc) {
+              · {{ 'notes.edited' | transloco }}
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Not olustur / duzenle -->
+<p-dialog
+  [visible]="editorVisible()"
+  (visibleChange)="editorVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem' }"
+  [header]="(editing() ? 'notes.editTitle' : 'notes.newTitle') | transloco"
+>
+  <form [formGroup]="form" class="flex flex-col gap-3 pt-1" (ngSubmit)="save()">
+    <div class="flex flex-col gap-1">
+      <label for="note-text" class="text-sm font-medium">{{ 'notes.form.text' | transloco }} *</label>
+      <textarea
+        id="note-text"
+        pTextarea
+        formControlName="noteText"
+        rows="5"
+        class="w-full"
+        data-testid="note-text"
+      ></textarea>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <span class="text-sm font-medium">{{ 'notes.form.color' | transloco }}</span>
+      <div class="flex gap-2">
+        @for (color of colors; track color) {
+          <button
+            type="button"
+            class="w-7 h-7 rounded-full border-2 cursor-pointer transition-transform"
+            [style.background]="color"
+            [class.scale-110]="selectedColor() === color"
+            [style.border-color]="selectedColor() === color ? '#3b82f6' : '#e2e8f0'"
+            [attr.aria-label]="color"
+            (click)="selectedColor.set(color)"
+          ></button>
+        }
+      </div>
+    </div>
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <p-checkbox formControlName="isPinned" [binary]="true" inputId="note-pinned" data-testid="note-pinned" />
+      {{ 'notes.form.pinned' | transloco }}
+    </label>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="editorVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="note-save"
+        [loading]="saving()"
+      />
+    </div>
+  </form>
+</p-dialog>

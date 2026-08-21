@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.calendar-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  flex-wrap: wrap;
+}
+
+.calendar-page__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.calendar-page__title {
+  margin-left: 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.calendar-page__filters {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.calendar-page__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.calendar-page__calendar {
+  flex: 1 1 auto;
+  min-height: 480px;
+  padding: 0.75rem;
+  overflow: hidden;
+}
+
+/* FullCalendar gorunum ayarlari */
+:host ::ng-deep {
+  .calendar-page__doctors {
+    min-width: 13rem;
+    max-width: 20rem;
+  }
+
+  .fc {
+    font-family: inherit;
+    font-size: 0.82rem;
+    height: 100%;
+  }
+
+  .fc .fc-timegrid-slot {
+    height: 1.6em;
+  }
+
+  .fc .fc-non-business {
+    background: repeating-linear-gradient(
+      135deg,
+      #f8fafc 0,
+      #f8fafc 8px,
+      #f1f5f9 8px,
+      #f1f5f9 16px
+    );
+  }
+
+  .fc .fc-event {
+    border-radius: 6px;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+
+  .fc .fc-timegrid-event .fc-event-main {
+    padding: 2px 4px;
+  }
+
+  .apt--cancelled {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .apt--noshow {
+    opacity: 0.8;
+  }
+
+  /* Kontrol randevulari cizgili desenle ayrisir */
+  .apt--control .fc-event-main {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.22) 0,
+      rgba(255, 255, 255, 0.22) 5px,
+      transparent 5px,
+      transparent 10px
+    );
+  }
+
+  .apt--placeholder {
+    border-style: dashed;
+  }
+
+  .fc .fc-day-today {
+    background: #eff6ff66;
+  }
+
+  .fc .fc-list-event:hover td {
+    background: #f8fafc;
+  }
+}

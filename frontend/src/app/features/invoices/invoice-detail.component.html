@@ -1,0 +1,395 @@
+@if (loading()) {
+  <div class="dt-card p-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+} @else if (notFound() || !invoice()) {
+  <div class="dt-card flex flex-col items-center gap-3 p-10 text-slate-400">
+    <i class="fa-regular fa-file-excel text-3xl" aria-hidden="true"></i>
+    <p class="m-0">{{ 'invoices.notFound' | transloco }}</p>
+    <p-button
+      [label]="'invoices.backToList' | transloco"
+      icon="fa-solid fa-arrow-left"
+      size="small"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="back()"
+    />
+  </div>
+} @else {
+  @if (invoice(); as inv) {
+  <app-page-header
+    [title]="inv.invoiceNumber || ('invoices.noNumber' | transloco)"
+    [subtitle]="inv.buyerName"
+  >
+    <p-button
+      [label]="'invoices.backToList' | transloco"
+      icon="fa-solid fa-arrow-left"
+      size="small"
+      severity="secondary"
+      [text]="true"
+      data-testid="invoice-back"
+      (onClick)="back()"
+    />
+
+    @if (inv.status === InvoiceStatus.Draft) {
+      <p-button
+        [label]="'invoices.actions.generateUbl' | transloco"
+        icon="fa-solid fa-file-code"
+        size="small"
+        [loading]="busy()"
+        data-testid="invoice-generate-ubl"
+        (onClick)="generateUbl()"
+        *hasPermission="'invoice.create'"
+      />
+    }
+    @if (inv.status === InvoiceStatus.UblGenerated) {
+      <p-button
+        [label]="'invoices.actions.send' | transloco"
+        icon="fa-solid fa-paper-plane"
+        size="small"
+        [loading]="busy()"
+        data-testid="invoice-send"
+        (onClick)="send()"
+        *hasPermission="'invoice.send'"
+      />
+    }
+    @if (canRetry()) {
+      <p-button
+        [label]="'invoices.actions.retry' | transloco"
+        icon="fa-solid fa-rotate-right"
+        size="small"
+        severity="danger"
+        [loading]="busy()"
+        data-testid="invoice-retry"
+        (onClick)="send()"
+        *hasPermission="'invoice.send'"
+      />
+    }
+    @if (inv.status !== InvoiceStatus.Draft) {
+      <p-button
+        [label]="'invoices.actions.downloadUbl' | transloco"
+        icon="fa-solid fa-file-code"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="busy()"
+        data-testid="invoice-download-ubl"
+        (onClick)="downloadUbl()"
+      />
+    }
+    @if (inv.status === InvoiceStatus.Succeeded) {
+      <p-button
+        [label]="'invoices.actions.downloadPdf' | transloco"
+        icon="fa-solid fa-file-pdf"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="busy()"
+        data-testid="invoice-download-pdf"
+        (onClick)="downloadPdf()"
+      />
+    }
+    @if (inv.status !== InvoiceStatus.Cancelled) {
+      <p-button
+        [label]="'invoices.actions.cancel' | transloco"
+        icon="fa-solid fa-ban"
+        size="small"
+        severity="danger"
+        [outlined]="true"
+        [loading]="busy()"
+        data-testid="invoice-cancel"
+        (onClick)="cancel()"
+        *hasPermission="'invoice.cancel'"
+      />
+    }
+  </app-page-header>
+
+  <!-- Belge kunyesi -->
+  <div class="dt-card mb-4 p-5" data-testid="invoice-identity">
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <app-invoice-kind-tag [value]="inv.documentKind" />
+      <app-invoice-scenario-tag [value]="inv.typeCode" />
+      <app-invoice-status-tag [value]="inv.status" data-testid="invoice-detail-status" />
+      @if (inv.profileId) {
+        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+          {{ inv.profileId }}
+        </span>
+      }
+    </div>
+
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-4">
+      <div class="flex flex-col gap-0.5">
+        <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+          {{ 'invoices.field.number' | transloco }}
+        </dt>
+        <dd class="m-0 font-mono text-sm text-slate-700" data-testid="invoice-number">
+          {{ inv.invoiceNumber || '—' }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+          {{ 'invoices.field.ettn' | transloco }}
+        </dt>
+        <dd class="m-0 font-mono text-xs break-all text-slate-700" data-testid="invoice-ettn">
+          {{ inv.ettn || '—' }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+          {{ 'invoices.field.issueDate' | transloco }}
+        </dt>
+        <dd class="m-0 text-sm text-slate-700">{{ inv.issueDate | trDate }}</dd>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+          {{ 'invoices.field.integrator' | transloco }}
+        </dt>
+        <dd class="m-0 text-sm text-slate-700">
+          @if (integratorKey(); as key) {
+            {{ key | transloco }}
+          } @else {
+            —
+          }
+          @if (inv.integratorRefId) {
+            <span class="text-xs text-slate-400"> · {{ inv.integratorRefId }}</span>
+          }
+        </dd>
+      </div>
+      @if (inv.exemptionCode) {
+        <div class="col-span-2 flex flex-col gap-0.5 md:col-span-4">
+          <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+            {{ 'invoices.field.exemption' | transloco }}
+          </dt>
+          <dd class="m-0 text-sm text-teal-700" data-testid="invoice-exemption">
+            {{ inv.exemptionCode }} — {{ inv.exemptionReason }}
+          </dd>
+        </div>
+      }
+      @if (inv.withholdingCode) {
+        <div class="col-span-2 flex flex-col gap-0.5 md:col-span-4">
+          <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+            {{ 'invoices.field.withholding' | transloco }}
+          </dt>
+          <dd class="m-0 text-sm text-fuchsia-700">{{ inv.withholdingCode }}</dd>
+        </div>
+      }
+    </dl>
+
+    @if (inv.errorMessage) {
+      <div
+        class="mt-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+        data-testid="invoice-detail-error"
+      >
+        <i class="fa-solid fa-triangle-exclamation mt-0.5 text-red-500" aria-hidden="true"></i>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-semibold text-red-700">
+            {{ 'invoices.integratorError' | transloco }}
+            <span class="font-normal">
+              ({{ 'invoices.field.attempt' | transloco }}: {{ inv.attemptCount }})
+            </span>
+          </span>
+          <span class="text-sm text-red-700/90">{{ inv.errorMessage }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="flex flex-col gap-4 lg:col-span-2">
+      <!-- Alici bilgileri (snapshot) -->
+      <div class="dt-card p-5">
+        <h3 class="mt-0 mb-3 text-base font-semibold text-slate-700">
+          {{ 'invoices.buyerTitle' | transloco }}
+        </h3>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-3">
+          <div class="flex flex-col gap-0.5">
+            <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+              {{ 'invoices.field.buyerName' | transloco }}
+            </dt>
+            <dd class="m-0 text-sm font-medium text-slate-700">{{ inv.buyerName }}</dd>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+              {{ 'invoices.field.tcknVkn' | transloco }}
+            </dt>
+            <dd class="m-0 font-mono text-sm text-slate-700">{{ inv.buyerTcknVkn || '—' }}</dd>
+          </div>
+          @if (inv.buyerPassportNo) {
+            <div class="flex flex-col gap-0.5">
+              <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                {{ 'invoices.field.passportNo' | transloco }}
+              </dt>
+              <dd class="m-0 font-mono text-sm text-slate-700">{{ inv.buyerPassportNo }}</dd>
+            </div>
+          }
+          @if (inv.buyerNationality) {
+            <div class="flex flex-col gap-0.5">
+              <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                {{ 'invoices.field.nationality' | transloco }}
+              </dt>
+              <dd class="m-0 text-sm text-slate-700">{{ inv.buyerNationality }}</dd>
+            </div>
+          }
+          @if (inv.buyerLastEntryDate) {
+            <div class="flex flex-col gap-0.5">
+              <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                {{ 'invoices.field.lastEntryDate' | transloco }}
+              </dt>
+              <dd class="m-0 text-sm text-slate-700">{{ inv.buyerLastEntryDate | trDate }}</dd>
+            </div>
+          }
+          <div class="flex flex-col gap-0.5">
+            <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+              {{ 'invoices.field.email' | transloco }}
+            </dt>
+            <dd class="m-0 text-sm text-slate-700">{{ inv.buyerEmail || '—' }}</dd>
+          </div>
+          @if (inv.buyerAddress) {
+            <div class="col-span-2 flex flex-col gap-0.5 md:col-span-3">
+              <dt class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                {{ 'invoices.field.address' | transloco }}
+              </dt>
+              <dd class="m-0 text-sm text-slate-700">{{ inv.buyerAddress }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      <!-- Kalemler -->
+      <div class="dt-card p-5">
+        <h3 class="mt-0 mb-3 text-base font-semibold text-slate-700">
+          {{ 'invoices.linesTitle' | transloco }}
+        </h3>
+        <p-table [value]="inv.lines" [rowHover]="true" dataKey="id" data-testid="invoice-lines">
+          <ng-template #header>
+            <tr>
+              <th style="width: 3rem">#</th>
+              <th>{{ 'invoices.line.name' | transloco }}</th>
+              <th class="text-right!" style="width: 5rem">
+                {{ 'invoices.line.quantity' | transloco }}
+              </th>
+              <th class="text-right!" style="width: 8rem">
+                {{ 'invoices.line.unitPrice' | transloco }}
+              </th>
+              <th class="text-right!" style="width: 8rem">
+                {{ 'invoices.line.discount' | transloco }}
+              </th>
+              <th class="text-right!" style="width: 5rem">
+                {{ 'invoices.line.vatRate' | transloco }}
+              </th>
+              <th class="text-right!" style="width: 8rem">
+                {{ 'invoices.line.vatAmount' | transloco }}
+              </th>
+              <th class="text-right!" style="width: 9rem">
+                {{ 'invoices.line.lineTotal' | transloco }}
+              </th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-line>
+            <tr>
+              <td class="text-slate-400">{{ line.seqNo }}</td>
+              <td class="font-medium text-slate-700">
+                {{ line.itemName }}
+                @if (line.isAesthetic) {
+                  <span class="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-700">
+                    {{ 'invoices.line.aesthetic' | transloco }}
+                  </span>
+                }
+              </td>
+              <td class="text-right">{{ line.quantity }}</td>
+              <td class="text-right">{{ line.unitPrice | money }}</td>
+              <td class="text-right">{{ line.discountAmount | money }}</td>
+              <td class="text-right">%{{ line.vatRate }}</td>
+              <td class="text-right">{{ line.vatAmount | money }}</td>
+              <td class="text-right font-semibold">{{ line.lineTotal | money }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+
+        <!-- Toplamlar -->
+        <div class="mt-4 flex justify-end">
+          <dl class="w-full max-w-sm text-sm" data-testid="invoice-totals">
+            <div class="flex justify-between border-b border-slate-100 py-1.5">
+              <dt class="text-slate-500">{{ 'invoices.totals.subTotal' | transloco }}</dt>
+              <dd class="m-0 font-medium">{{ inv.totals.subTotal | money }}</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 py-1.5">
+              <dt class="text-slate-500">{{ 'invoices.totals.discount' | transloco }}</dt>
+              <dd class="m-0 font-medium">{{ inv.totals.discountTotal | money }}</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 py-1.5">
+              <dt class="text-slate-500">{{ 'invoices.totals.vat' | transloco }}</dt>
+              <dd class="m-0 font-medium">{{ inv.totals.vatTotal | money }}</dd>
+            </div>
+            @if (inv.totals.withholdingTotal) {
+              <div class="flex justify-between border-b border-slate-100 py-1.5">
+                <dt class="text-slate-500">{{ 'invoices.totals.withholding' | transloco }}</dt>
+                <dd class="m-0 font-medium text-fuchsia-700">
+                  −{{ inv.totals.withholdingTotal | money }}
+                </dd>
+              </div>
+            }
+            @if (inv.totals.gvStopajTotal) {
+              <div class="flex justify-between border-b border-slate-100 py-1.5">
+                <dt class="text-slate-500">{{ 'invoices.totals.gvStopaj' | transloco }}</dt>
+                <dd class="m-0 font-medium text-fuchsia-700">
+                  −{{ inv.totals.gvStopajTotal | money }}
+                </dd>
+              </div>
+            }
+            <div class="flex justify-between pt-2.5">
+              <dt class="font-semibold text-slate-700">
+                {{ 'invoices.totals.payable' | transloco }}
+              </dt>
+              <dd class="m-0 text-lg font-semibold text-blue-600" data-testid="invoice-payable">
+                {{ inv.totals.payableAmount | money }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- Durum gecmisi -->
+    <div class="dt-card p-5" data-testid="invoice-timeline">
+      <h3 class="mt-0 mb-4 text-base font-semibold text-slate-700">
+        {{ 'invoices.timelineTitle' | transloco }}
+      </h3>
+      @if (timeline().length === 0) {
+        <p class="text-sm text-slate-400">{{ 'invoices.timelineEmpty' | transloco }}</p>
+      } @else {
+        <p-timeline [value]="timeline()" align="left" styleClass="invoice-timeline">
+          <ng-template #marker let-entry>
+            <span
+              class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] text-white"
+              [style.background]="entry.color"
+            >
+              <i [class]="entry.icon" aria-hidden="true"></i>
+            </span>
+          </ng-template>
+          <ng-template #content let-entry>
+            <div class="flex flex-col gap-1 pb-5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-slate-700">
+                  {{ entry.statusKey | transloco }}
+                </span>
+                <span class="text-xs text-slate-400">
+                  {{ entry.log.atUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+                </span>
+              </div>
+              @if (entry.log.actorUserId) {
+                <span class="text-xs text-slate-400">
+                  {{ 'invoices.timelineActor' | transloco }} #{{ entry.log.actorUserId }}
+                </span>
+              }
+              @if (entry.log.detail) {
+                <span class="text-xs leading-relaxed break-words text-slate-500">
+                  {{ entry.log.detail }}
+                </span>
+              }
+            </div>
+          </ng-template>
+        </p-timeline>
+      }
+    </div>
+  </div>
+}
+}

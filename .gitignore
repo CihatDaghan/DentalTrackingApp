@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+artifacts/
+TestResults/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+
+# Local data
+data/
+*.db
+
+# Secrets / env
+appsettings.*.local.json
+.env
+.env.*
+
+# OS
+.DS_Store

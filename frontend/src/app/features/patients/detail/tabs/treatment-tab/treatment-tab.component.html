@@ -1,0 +1,742 @@
+<div class="ttab">
+  <div class="ttab__main">
+    <!-- ================= Sol panel: tedavi katalogu ================= -->
+    <aside class="ttab__catalog dt-card">
+      <h3 class="ttab__panel-title">{{ 'treatment.catalogTitle' | transloco }}</h3>
+
+      <p-select
+        [options]="categories()"
+        [ngModel]="selectedCategoryId()"
+        (ngModelChange)="onCategoryChange($event)"
+        optionValue="id"
+        optionLabel="name"
+        [showClear]="true"
+        [fluid]="true"
+        size="small"
+        appendTo="body"
+        data-testid="treatment-category-select"
+        [placeholder]="'treatment.categoryPlaceholder' | transloco"
+      >
+        <ng-template #selectedItem let-cat>
+          @if (cat) {
+            <span class="ttab__opt">
+              <span class="ttab__dot" [style.background]="cat.colorHex ?? '#94a3b8'"></span>
+              {{ cat.name }}
+            </span>
+          }
+        </ng-template>
+        <ng-template #item let-cat>
+          <span class="ttab__opt">
+            <span class="ttab__dot" [style.background]="cat.colorHex ?? '#94a3b8'"></span>
+            {{ cat.name }}
+          </span>
+        </ng-template>
+      </p-select>
+
+      <span class="ttab__search p-input-icon-left">
+        <input
+          pInputText
+          type="text"
+          class="w-full"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchInput($event)"
+          data-testid="treatment-search"
+          [placeholder]="'treatment.searchPlaceholder' | transloco"
+        />
+      </span>
+
+      <div class="ttab__list" data-testid="treatment-catalog-list">
+        @if (catalogLoading()) {
+          <div class="ttab__muted">{{ 'common.loading' | transloco }}</div>
+        } @else if (!catalogItems().length) {
+          <div class="ttab__muted">{{ 'treatment.catalogEmpty' | transloco }}</div>
+        } @else {
+          @for (def of catalogItems(); track def.id) {
+            <button
+              type="button"
+              class="ttab__item"
+              [class.ttab__item--active]="activeTreatment()?.id === def.id"
+              [style.--cat-color]="def.categoryColorHex ?? '#94a3b8'"
+              [attr.data-testid]="'catalog-item-' + def.code"
+              (click)="selectTreatment(def)"
+            >
+              <span class="ttab__item-name">{{ def.name }}</span>
+              <span class="ttab__item-price">{{ resolvedPrice(def) | money }}</span>
+            </button>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- ================= Orta: dis semasi ================= -->
+    <section class="ttab__chart dt-card">
+      <div class="ttab__chart-toolbar">
+        <h3 class="ttab__panel-title">{{ 'treatment.chartTitle' | transloco }}</h3>
+        <p-selectbutton
+          [options]="dentitionOptions()"
+          [ngModel]="dentition()"
+          (ngModelChange)="setDentition($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          size="small"
+          data-testid="dentition-toggle"
+        />
+      </div>
+
+      <app-tooth-chart
+        [dentition]="dentition()"
+        [teeth]="teethStates()"
+        [activeLayer]="activeLayer()"
+        (selectionChange)="onSelectionChange($event)"
+        (surfaceClick)="onSurfaceClick($event)"
+      />
+
+      @if (mouthWideCount() > 0) {
+        <div class="ttab__mouthwide">
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          {{ 'treatment.mouthWide' | transloco: { count: mouthWideCount() } }}
+        </div>
+      }
+
+      @if (legendItems().length) {
+        <div class="ttab__legend">
+          @for (item of legendItems(); track item.color + (item.label ?? '')) {
+            <span class="ttab__legend-chip">
+              <span class="ttab__dot" [style.background]="item.color"></span>
+              {{ item.label }}
+            </span>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ================= Sag panel: kayit girisi ================= -->
+    <aside class="ttab__entry dt-card">
+      <div class="ttab__field">
+        <label class="ttab__label" for="tt-doctor">{{ 'treatment.doctor' | transloco }}</label>
+        <p-select
+          inputId="tt-doctor"
+          [options]="doctors()"
+          [ngModel]="selectedDoctorId()"
+          (ngModelChange)="selectedDoctorId.set($event)"
+          optionValue="id"
+          [disabled]="doctorLocked()"
+          [showClear]="!doctorLocked()"
+          [fluid]="true"
+          size="small"
+          appendTo="body"
+          data-testid="treatment-doctor-select"
+          [placeholder]="'treatment.doctorPlaceholder' | transloco"
+          [pTooltip]="doctorLocked() ? ('treatment.doctorLocked' | transloco) : ''"
+        >
+          <ng-template #selectedItem let-doctor>
+            @if (doctor) {
+              <span class="ttab__opt">
+                <span class="ttab__dot" [style.background]="doctor.color ?? '#3b82f6'"></span>
+                {{ doctor.firstName }} {{ doctor.lastName }}
+              </span>
+            }
+          </ng-template>
+          <ng-template #item let-doctor>
+            <span class="ttab__opt">
+              <span class="ttab__dot" [style.background]="doctor.color ?? '#3b82f6'"></span>
+              {{ doctor.firstName }} {{ doctor.lastName }}
+            </span>
+          </ng-template>
+        </p-select>
+      </div>
+
+      <div class="ttab__field">
+        <p-selectbutton
+          [options]="statusOptions()"
+          [ngModel]="activeStatus()"
+          (ngModelChange)="activeStatus.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [fluid]="true"
+          size="small"
+          data-testid="layer-toggle"
+          class="ttab__layer-toggle"
+        />
+      </div>
+
+      <!-- Aktif tedavi ozeti -->
+      <div class="ttab__active" data-testid="active-treatment">
+        <span class="ttab__label">{{ 'treatment.activeTreatment' | transloco }}</span>
+        @if (activeTreatment(); as def) {
+          <div class="ttab__active-box" [style.--cat-color]="def.categoryColorHex ?? '#94a3b8'">
+            <span class="ttab__active-name">{{ def.name }}</span>
+            <span class="ttab__active-price">{{ resolvedPrice(def) | money }}</span>
+          </div>
+        } @else {
+          <div class="ttab__muted">{{ 'treatment.noActiveTreatment' | transloco }}</div>
+        }
+      </div>
+
+      <!-- Secili disler -->
+      <div class="ttab__field">
+        <div class="ttab__selection-head">
+          <span class="ttab__label">{{ 'treatment.selection' | transloco }}</span>
+          @if (selectionItems().length) {
+            <button type="button" class="ttab__clear" (click)="clearSelection()">
+              {{ 'treatment.clearSelection' | transloco }}
+            </button>
+          }
+        </div>
+        <div class="ttab__chips" data-testid="selection-chips">
+          @if (selectionItems().length) {
+            @for (sel of selectionItems(); track sel.toothNo) {
+              <span class="ttab__chip" [attr.data-testid]="'chip-' + sel.toothNo">
+                <b>{{ sel.toothNo }}</b>
+                @if (sel.surfaces.length) {
+                  <span class="ttab__chip-surfaces">{{ sel.surfaces.join('') }}</span>
+                }
+                <button
+                  type="button"
+                  class="ttab__chip-x"
+                  (click)="removeSelection(sel.toothNo)"
+                  [attr.aria-label]="'common.delete' | transloco"
+                >
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </span>
+            }
+          } @else {
+            <span class="ttab__muted">{{ 'treatment.selectionEmpty' | transloco }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- ICD (yalniz Tani katmaninda) -->
+      @if (activeStatus() === TreatmentRecordStatus.Diagnosis) {
+        <div class="ttab__field">
+          <label class="ttab__label" for="tt-icd">{{ 'treatment.icd' | transloco }}</label>
+          <p-autocomplete
+            inputId="tt-icd"
+            [(ngModel)]="selectedIcd"
+            [suggestions]="icdSuggestions()"
+            (completeMethod)="searchIcd($event)"
+            optionLabel="code"
+            [forceSelection]="true"
+            [showClear]="true"
+            [fluid]="true"
+            size="small"
+            appendTo="body"
+            data-testid="icd-autocomplete"
+            [placeholder]="'treatment.icdPlaceholder' | transloco"
+          >
+            <ng-template #item let-icd>
+              <span class="ttab__icd-item"><b>{{ icd.code }}</b> — {{ icd.name }}</span>
+            </ng-template>
+          </p-autocomplete>
+        </div>
+      }
+
+      <div class="ttab__field">
+        <label class="ttab__label" for="tt-desc">{{ 'treatment.descriptionLabel' | transloco }}</label>
+        <textarea
+          id="tt-desc"
+          pTextarea
+          rows="2"
+          class="w-full"
+          [(ngModel)]="description"
+          data-testid="treatment-description"
+        ></textarea>
+      </div>
+
+      <div class="ttab__field">
+        <label class="ttab__label" for="tt-price">{{ 'treatment.priceOverride' | transloco }}</label>
+        <p-inputnumber
+          inputId="tt-price"
+          [(ngModel)]="priceOverride"
+          mode="decimal"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          locale="tr-TR"
+          suffix=" ₺"
+          [min]="0"
+          [fluid]="true"
+          size="small"
+          data-testid="treatment-price-override"
+          [placeholder]="
+            activeTreatment()
+              ? ('treatment.priceAuto' | transloco: { price: resolvedPrice(activeTreatment()!) })
+              : ''
+          "
+        />
+      </div>
+
+      <ng-container *hasPermission="'treatment.create'">
+        <p-button
+          [label]="'treatment.add' | transloco"
+          icon="fa-solid fa-plus"
+          [fluid]="true"
+          [loading]="adding()"
+          data-testid="treatment-add-btn"
+          (onClick)="add()"
+        />
+      </ng-container>
+    </aside>
+  </div>
+
+  <!-- ================= Alt: tedavi gecmisi ================= -->
+  <section class="ttab__history dt-card">
+    <div class="ttab__history-head">
+      <h3 class="ttab__panel-title">{{ 'treatment.history.title' | transloco }}</h3>
+      <p-selectbutton
+        [options]="historyFilterOptions()"
+        [ngModel]="historyFilter()"
+        (ngModelChange)="historyFilter.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        size="small"
+        data-testid="history-filter"
+      />
+      <span class="ttab__spacer"></span>
+      <ng-container *hasPermission="'treatment.edit-price'">
+        <p-button
+          [label]="'treatment.history.editPrice' | transloco"
+          icon="fa-solid fa-tags"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          data-testid="edit-price-btn"
+          (onClick)="openBulkPrice()"
+        />
+      </ng-container>
+      <ng-container *hasPermission="'treatment.create'">
+        <p-button
+          [label]="'treatment.history.addTreatment' | transloco"
+          icon="fa-solid fa-plus"
+          size="small"
+          data-testid="add-treatment-btn"
+          (onClick)="openAddGeneral()"
+        />
+      </ng-container>
+    </div>
+
+    <p-table
+      [value]="filteredTreatments()"
+      [loading]="treatmentsLoading()"
+      [(selection)]="selectedRows"
+      dataKey="id"
+      [rowHover]="true"
+      size="small"
+      data-testid="treatment-history-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 3rem"><p-tableHeaderCheckbox /></th>
+          <th>{{ 'treatment.columns.date' | transloco }}</th>
+          <th>{{ 'treatment.columns.doctor' | transloco }}</th>
+          <th style="width: 5rem">{{ 'treatment.columns.tooth' | transloco }}</th>
+          <th style="width: 5.5rem">{{ 'treatment.columns.surface' | transloco }}</th>
+          <th>{{ 'treatment.columns.treatment' | transloco }}</th>
+          <th>{{ 'treatment.columns.description' | transloco }}</th>
+          <th class="text-right">{{ 'treatment.columns.amount' | transloco }}</th>
+          <th style="width: 6.5rem">{{ 'treatment.columns.status' | transloco }}</th>
+          <th style="width: 10rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr [attr.data-testid]="'treatment-row-' + row.id">
+          <td><p-tableCheckbox [value]="row" /></td>
+          <td class="whitespace-nowrap">{{ (row.performedAtUtc ?? row.createdAtUtc) | trDate }}</td>
+          <td>{{ row.doctorName || doctorName(row.doctorUserId) }}</td>
+          <td class="font-medium">
+            @if (row.toothNumber) {
+              {{ row.toothNumber }}
+            } @else {
+              <span class="ttab__general-badge">{{ 'treatment.general' | transloco }}</span>
+            }
+          </td>
+          <td class="font-mono">{{ surfacesLabel(row.surfaces) || '—' }}</td>
+          <td>
+            <span class="ttab__opt">
+              <span class="ttab__dot" [style.background]="row.categoryColorHex ?? '#94a3b8'"></span>
+              <span>{{ row.treatmentName }}</span>
+              @if (row.diagnosisIcdCode) {
+                <span class="ttab__icd-badge">{{ row.diagnosisIcdCode }}</span>
+              }
+            </span>
+          </td>
+          <td class="ttab__desc-cell" [pTooltip]="row.description" tooltipPosition="top">
+            {{ row.description || '—' }}
+          </td>
+          <td class="text-right whitespace-nowrap">
+            <span class="font-medium">{{ netAmount(row) | money }}</span>
+            @if (row.discountAmount > 0) {
+              <div class="ttab__discount">−{{ row.discountAmount | money }}</div>
+            }
+          </td>
+          <td><app-status-tag kind="treatment" [value]="row.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              @if (row.status !== TreatmentRecordStatus.Cancelled) {
+                <ng-container *hasPermission="'treatment.update'">
+                  @if (row.status === TreatmentRecordStatus.Diagnosis) {
+                    <p-button
+                      icon="fa-solid fa-clipboard-list"
+                      size="small"
+                      [text]="true"
+                      [pTooltip]="'treatment.rowToPlan' | transloco"
+                      tooltipPosition="top"
+                      [attr.data-testid]="'to-plan-' + row.id"
+                      (onClick)="convert(row)"
+                    />
+                  }
+                  @if (row.status === TreatmentRecordStatus.Planned) {
+                    <p-button
+                      icon="fa-solid fa-circle-check"
+                      size="small"
+                      [text]="true"
+                      severity="success"
+                      [pTooltip]="'treatment.rowConvert' | transloco"
+                      tooltipPosition="top"
+                      [attr.data-testid]="'convert-' + row.id"
+                      (onClick)="convert(row)"
+                    />
+                  }
+                  <p-button
+                    icon="fa-solid fa-pen"
+                    size="small"
+                    [text]="true"
+                    severity="secondary"
+                    [pTooltip]="'treatment.rowEdit' | transloco"
+                    tooltipPosition="top"
+                    [attr.data-testid]="'edit-' + row.id"
+                    (onClick)="openEdit(row)"
+                  />
+                  @if (row.status === TreatmentRecordStatus.Done) {
+                    <p-button
+                      icon="fa-solid fa-ban"
+                      size="small"
+                      [text]="true"
+                      severity="danger"
+                      [pTooltip]="'treatment.rowCancel' | transloco"
+                      tooltipPosition="top"
+                      [attr.data-testid]="'cancel-' + row.id"
+                      (onClick)="openCancel(row)"
+                    />
+                  }
+                </ng-container>
+                @if (row.status !== TreatmentRecordStatus.Done) {
+                  <ng-container *hasPermission="'treatment.delete'">
+                    <p-button
+                      icon="fa-solid fa-trash-can"
+                      size="small"
+                      [text]="true"
+                      severity="danger"
+                      [pTooltip]="'treatment.rowDelete' | transloco"
+                      tooltipPosition="top"
+                      [attr.data-testid]="'delete-' + row.id"
+                      (onClick)="remove(row)"
+                    />
+                  </ng-container>
+                }
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="10">
+            <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+              <i class="fa-solid fa-tooth text-2xl" aria-hidden="true"></i>
+              <span>{{ 'treatment.history.empty' | transloco }}</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>
+
+<!-- ================= Duzenleme dialogu ================= -->
+<p-dialog
+  [visible]="editTarget() !== null"
+  (visibleChange)="!$event ? editTarget.set(null) : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem' }"
+  [header]="'treatment.editTitle' | transloco"
+>
+  @if (editTarget(); as row) {
+    <form [formGroup]="editForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveEdit()">
+      <div class="ttab__edit-summary">
+        <span class="ttab__dot" [style.background]="row.categoryColorHex ?? '#94a3b8'"></span>
+        <b>{{ row.treatmentName }}</b>
+        @if (row.toothNumber) {
+          <span class="text-slate-500">· {{ 'treatment.columns.tooth' | transloco }} {{ row.toothNumber }}</span>
+        }
+      </div>
+      @if (row.toothNumber) {
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium">{{ 'treatment.form.surfaces' | transloco }}</label>
+          <p-selectbutton
+            [options]="surfaceOptions"
+            formControlName="surfaces"
+            optionLabel="label"
+            optionValue="value"
+            [multiple]="true"
+            size="small"
+            data-testid="edit-surfaces"
+          />
+        </div>
+      }
+      <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium" for="ed-price">{{ 'treatment.form.price' | transloco }} *</label>
+          <p-inputnumber
+            inputId="ed-price"
+            formControlName="price"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            locale="tr-TR"
+            suffix=" ₺"
+            [min]="0"
+            [fluid]="true"
+            data-testid="edit-price-input"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium" for="ed-discount">{{ 'treatment.form.discount' | transloco }}</label>
+          <p-inputnumber
+            inputId="ed-discount"
+            formControlName="discountAmount"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            locale="tr-TR"
+            suffix=" ₺"
+            [min]="0"
+            [fluid]="true"
+            data-testid="edit-discount-input"
+          />
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="ed-desc">{{ 'treatment.form.description' | transloco }}</label>
+        <textarea id="ed-desc" pTextarea formControlName="description" rows="2" class="w-full"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="editTarget.set(null)"
+        />
+        <p-button
+          type="submit"
+          [label]="'common.save' | transloco"
+          [loading]="editSaving()"
+          data-testid="edit-save-btn"
+        />
+      </div>
+    </form>
+  }
+</p-dialog>
+
+<!-- ================= Iptal dialogu ================= -->
+<p-dialog
+  [visible]="cancelTarget() !== null"
+  (visibleChange)="!$event ? cancelTarget.set(null) : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '28rem' }"
+  [header]="'treatment.cancelTitle' | transloco"
+>
+  @if (cancelTarget(); as row) {
+    <div class="flex flex-col gap-3 pt-1">
+      <p class="m-0 text-sm text-slate-600">
+        {{ 'treatment.cancelMessage' | transloco: { name: row.treatmentName } }}
+      </p>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="cn-reason">{{ 'treatment.cancelReason' | transloco }}</label>
+        <textarea
+          id="cn-reason"
+          pTextarea
+          rows="2"
+          class="w-full"
+          [(ngModel)]="cancelReason"
+          data-testid="cancel-reason"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelTarget.set(null)"
+        />
+        <p-button
+          [label]="'treatment.rowCancel' | transloco"
+          severity="danger"
+          [loading]="cancelSaving()"
+          data-testid="cancel-confirm-btn"
+          (onClick)="saveCancel()"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>
+
+<!-- ================= Toplu fiyat dialogu (Edit Price) ================= -->
+<p-dialog
+  [visible]="bulkPriceVisible()"
+  (visibleChange)="bulkPriceVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '40rem' }"
+  [header]="'treatment.bulkPriceTitle' | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1">
+    <table class="ttab__bulk-table">
+      <thead>
+        <tr>
+          <th>{{ 'treatment.columns.treatment' | transloco }}</th>
+          <th>{{ 'treatment.columns.tooth' | transloco }}</th>
+          <th>{{ 'treatment.form.price' | transloco }}</th>
+          <th>{{ 'treatment.form.discount' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of bulkPriceRows; track item.record.id) {
+          <tr>
+            <td>{{ item.record.treatmentName }}</td>
+            <td>{{ item.record.toothNumber ?? '—' }}</td>
+            <td>
+              <p-inputnumber
+                [(ngModel)]="item.price"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                locale="tr-TR"
+                suffix=" ₺"
+                [min]="0"
+                [fluid]="true"
+                size="small"
+                [attr.data-testid]="'bulk-price-' + item.record.id"
+              />
+            </td>
+            <td>
+              <p-inputnumber
+                [(ngModel)]="item.discountAmount"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                locale="tr-TR"
+                suffix=" ₺"
+                [min]="0"
+                [fluid]="true"
+                size="small"
+                [attr.data-testid]="'bulk-discount-' + item.record.id"
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="bulkPriceVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        [loading]="bulkPriceSaving()"
+        data-testid="bulk-price-save"
+        (onClick)="saveBulkPrice()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- ================= Genel tedavi ekleme (Add Treatment) ================= -->
+<p-dialog
+  [visible]="addGeneralVisible()"
+  (visibleChange)="addGeneralVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem' }"
+  [header]="'treatment.addGeneralTitle' | transloco"
+>
+  <div class="flex flex-col gap-3 pt-1">
+    <p class="m-0 text-sm text-slate-500">{{ 'treatment.addGeneralHint' | transloco }}</p>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="gn-treatment">{{ 'treatment.form.treatment' | transloco }} *</label>
+      <p-autocomplete
+        inputId="gn-treatment"
+        [(ngModel)]="generalTreatment"
+        [suggestions]="generalSuggestions()"
+        (completeMethod)="searchGeneral($event)"
+        optionLabel="name"
+        [forceSelection]="true"
+        [fluid]="true"
+        appendTo="body"
+        data-testid="general-treatment-autocomplete"
+        [placeholder]="'treatment.searchPlaceholder' | transloco"
+      >
+        <ng-template #item let-def>
+          <span class="ttab__opt">
+            <span class="ttab__dot" [style.background]="def.categoryColorHex ?? '#94a3b8'"></span>
+            {{ def.name }}
+            <span class="text-slate-400 text-xs ml-auto">{{ resolvedPrice(def) | money }}</span>
+          </span>
+        </ng-template>
+      </p-autocomplete>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">{{ 'treatment.form.status' | transloco }}</label>
+      <p-selectbutton
+        [options]="statusOptions()"
+        [(ngModel)]="generalStatus"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        size="small"
+        data-testid="general-status"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="gn-price">{{ 'treatment.priceOverride' | transloco }}</label>
+      <p-inputnumber
+        inputId="gn-price"
+        [(ngModel)]="generalPrice"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="2"
+        locale="tr-TR"
+        suffix=" ₺"
+        [min]="0"
+        [fluid]="true"
+        data-testid="general-price"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="gn-desc">{{ 'treatment.form.description' | transloco }}</label>
+      <textarea id="gn-desc" pTextarea rows="2" class="w-full" [(ngModel)]="generalDescription"></textarea>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="addGeneralVisible.set(false)"
+      />
+      <p-button
+        [label]="'treatment.add' | transloco"
+        [loading]="addGeneralSaving()"
+        data-testid="general-save"
+        (onClick)="saveAddGeneral()"
+      />
+    </div>
+  </div>
+</p-dialog>

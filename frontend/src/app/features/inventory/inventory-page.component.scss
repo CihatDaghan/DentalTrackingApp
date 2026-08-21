@@ -1,0 +1,191 @@
+.inventory {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .inventory {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inventory__categories {
+  padding: 0.75rem;
+}
+
+.inventory__categories-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.inventory__category-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.inventory__category-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+
+  .inventory__category-actions {
+    display: none;
+    flex-shrink: 0;
+  }
+
+  &:hover .inventory__category-actions {
+    display: flex;
+  }
+}
+
+.inventory__category {
+  flex: 1 1 auto;
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &--active {
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+}
+
+.inventory__items {
+  overflow: hidden;
+
+  /* Dar ekranlarda tablo kart icinde yatay kayar (sayfa govdesi kaymaz). */
+  :host ::ng-deep .p-datatable-table-container {
+    overflow-x: auto;
+  }
+}
+
+/* Kritik seviye rozeti — miktar hucresi icinde */
+.inventory__low-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Ust seritteki "Kritik seviyedekiler" filtre cipi */
+.inventory__low-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #b91c1c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background: #fee2e2;
+  }
+
+  &--active {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    color: #ffffff;
+  }
+}
+
+.inventory__low-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(185, 28, 28, 0.12);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.inventory__low-chip--active .inventory__low-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Satir icindeki hareket gecmisi tablosu */
+.inventory__movements {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+
+  th {
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.35rem 0.5rem;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.inventory__dir {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+
+  &--in {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &--out {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}

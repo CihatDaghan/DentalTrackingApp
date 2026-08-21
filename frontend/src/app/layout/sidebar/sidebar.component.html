@@ -1,0 +1,33 @@
+<nav class="sidebar">
+  <a class="sidebar__logo" routerLink="/app/dashboard" [pTooltip]="'app.name' | transloco" tooltipPosition="right">
+    <i class="fa-solid fa-tooth" aria-hidden="true"></i>
+  </a>
+
+  <ul class="sidebar__items">
+    @for (item of items; track item.key) {
+      <li>
+        @if (item.route) {
+          <a
+            class="sidebar__item"
+            [routerLink]="item.route"
+            routerLinkActive="sidebar__item--active"
+            [pTooltip]="'menu.' + item.key | transloco"
+            tooltipPosition="right"
+          >
+            <i [class]="item.icon" aria-hidden="true"></i>
+          </a>
+        } @else {
+          <!-- Sonraki fazlarda route baglanacak yer tutucular -->
+          <button
+            type="button"
+            class="sidebar__item"
+            [pTooltip]="'menu.' + item.key | transloco"
+            tooltipPosition="right"
+          >
+            <i [class]="item.icon" aria-hidden="true"></i>
+          </button>
+        }
+      </li>
+    }
+  </ul>
+</nav>

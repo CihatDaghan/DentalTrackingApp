@@ -1,0 +1,11 @@
+<div class="shell">
+  <app-sidebar class="shell__sidebar" />
+  <div class="shell__main">
+    <app-impersonation-banner />
+    <app-announcement-banner />
+    <app-topbar [titleKey]="titleKey()" />
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

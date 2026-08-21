@@ -1,0 +1,179 @@
+<div class="dashboard">
+  <h2 class="dashboard__welcome">
+    {{ 'dashboard.welcome' | transloco: { name: authStore.user()?.firstName ?? '' } }}
+  </h2>
+
+  <div class="dashboard__kpis">
+    @for (kpi of kpis(); track kpi.key) {
+      <div class="dashboard__kpi dt-card" *hasPermission="kpi.permission">
+        <span class="dashboard__kpi-icon"><i [class]="kpi.icon" aria-hidden="true"></i></span>
+        <div class="dashboard__kpi-body">
+          <span class="dashboard__kpi-label">{{ 'dashboard.kpi.' + kpi.key | transloco }}</span>
+          <span class="dashboard__kpi-value" [attr.data-testid]="'kpi-' + kpi.key">
+            @if (summary()) {
+              {{ kpi.value | money }}
+            } @else {
+              —
+            }
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="dashboard__grid">
+    <!-- Son 30 gun ciro trendi -->
+    <div class="dashboard__chart dt-card" data-testid="dashboard-revenue-chart" *hasPermission="'report.view'">
+      <div class="dashboard__chart-head">
+        <h3>{{ 'dashboard.revenueTrend' | transloco }}</h3>
+        <a routerLink="/app/reports" class="dashboard__link">
+          {{ 'dashboard.goToReports' | transloco }}
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+      @if (summary()) {
+        <p-chart
+          type="line"
+          [data]="revenueChartData()"
+          [options]="revenueChartOptions"
+          height="220px"
+        />
+      } @else {
+        <div class="dashboard__empty">{{ 'common.loading' | transloco }}</div>
+      }
+    </div>
+
+    <!-- Bugunun dogum gunleri -->
+    <div class="dashboard__birthdays dt-card" data-testid="dashboard-birthdays">
+      <div class="dashboard__chart-head">
+        <h3>
+          <i class="fa-solid fa-cake-candles mr-2 text-pink-500" aria-hidden="true"></i>
+          {{ 'dashboard.birthdays.title' | transloco }}
+        </h3>
+      </div>
+      @if (birthdays().length === 0) {
+        <div class="dashboard__empty">{{ 'dashboard.birthdays.empty' | transloco }}</div>
+      } @else {
+        <ul class="dashboard__birthday-list">
+          @for (p of birthdays(); track p.patientId) {
+            <li>
+              <a [routerLink]="['/app/patients', p.patientId]" class="dashboard__birthday-name">
+                {{ p.fullName }}
+              </a>
+              @if (p.age != null) {
+                <span class="dashboard__birthday-age">
+                  {{ 'dashboard.birthdays.age' | transloco: { age: p.age } }}
+                </span>
+              }
+            </li>
+          }
+        </ul>
+        <a
+          class="dashboard__birthday-cta"
+          routerLink="/app/messaging"
+          [queryParams]="birthdayQueryParams()"
+          data-testid="birthday-send"
+        >
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+          {{ 'dashboard.birthdays.send' | transloco }}
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Bekleyen isler (gercek veri) -->
+  <div class="dashboard__pending dt-card" data-testid="dashboard-pending">
+    <div class="dashboard__pending-head">
+      <h3>{{ 'dashboard.pending.title' | transloco }}</h3>
+      @if (!pendingLoading() && totalPending() === 0) {
+        <span class="dashboard__pending-clear">
+          <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+          {{ 'dashboard.pending.allClear' | transloco }}
+        </span>
+      }
+    </div>
+    <div class="dashboard__pending-list">
+      @for (task of pendingTasks(); track task.key) {
+        <a
+          class="dashboard__pending-item"
+          [class.dashboard__pending-item--zero]="task.count === 0"
+          [routerLink]="task.route"
+          [queryParams]="task.queryParams"
+          [attr.data-testid]="'pending-' + task.key"
+        >
+          <span class="dashboard__pending-icon"><i [class]="task.icon" aria-hidden="true"></i></span>
+          <span class="dashboard__pending-body">
+            <span class="dashboard__pending-count" [attr.data-testid]="'pending-count-' + task.key">
+              {{ task.count }}
+            </span>
+            <span class="dashboard__pending-label">
+              {{ 'dashboard.pending.' + task.key | transloco }}
+            </span>
+          </span>
+          <i class="fa-solid fa-arrow-right dashboard__pending-arrow" aria-hidden="true"></i>
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Bugunun randevulari -->
+  <div class="dashboard__appointments dt-card">
+    <div class="dashboard__appointments-head">
+      <h3>
+        {{ 'dashboard.todayAppointments' | transloco }}
+        @if (summary(); as s) {
+          <span class="dashboard__appointment-count" data-testid="today-appointment-count">
+            {{ s.todayAppointmentCount }}
+          </span>
+        }
+      </h3>
+      <div class="dashboard__appointment-statuses">
+        @for (st of summary()?.todayAppointmentsByStatus ?? []; track st.status) {
+          <span class="dashboard__appointment-status">
+            <app-status-tag kind="appointment" [value]="st.status" />
+            <b>{{ st.count }}</b>
+          </span>
+        }
+      </div>
+      <a routerLink="/app/calendar" class="dashboard__appointments-link">
+        {{ 'dashboard.goToCalendar' | transloco }}
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    @if (loading()) {
+      <div class="dashboard__appointments-empty">{{ 'common.loading' | transloco }}</div>
+    } @else if (appointments().length === 0) {
+      <div class="dashboard__appointments-empty">
+        <i class="fa-regular fa-calendar-check" aria-hidden="true"></i>
+        <p>{{ 'dashboard.noAppointments' | transloco }}</p>
+      </div>
+    } @else {
+      <ul class="dashboard__appointment-list">
+        @for (appt of appointments(); track appt.id) {
+          <li class="dashboard__appointment">
+            <span class="dashboard__appointment-time">
+              {{ appt.startUtc | trDate: 'HH:mm' }}–{{ appt.endUtc | trDate: 'HH:mm' }}
+            </span>
+            <span
+              class="dashboard__appointment-dot"
+              [style.background]="doctorColor(appt.doctorUserId)"
+              [title]="appt.doctorName"
+            ></span>
+            @if (appt.patientId != null) {
+              <a class="dashboard__appointment-patient" [routerLink]="['/app/patients', appt.patientId]">
+                {{ appt.patientName }}
+              </a>
+            } @else {
+              <span class="dashboard__appointment-patient dashboard__appointment-patient--empty">
+                {{ appt.title || ('calendar.type.emptySlot' | transloco) }}
+              </span>
+            }
+            <span class="dashboard__appointment-doctor">{{ appt.doctorName }}</span>
+            <app-status-tag kind="appointment" [value]="appt.status" />
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dental.Application\Dental.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Iyzipay" Version="2.1.80" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dental.UnitTests" />
+  </ItemGroup>
+
+  <!--
+    e-Nabız paket alan tanımları (rehber.enabiz.gov.tr/Home/PaketDetay çıktısından üretildi).
+    Bakanlık paketler için XSD YAYINLAMAZ — SOAP sözleşmesinde gövde xs:string'dir. Bu yüzden
+    şema doğrulaması resmi alan tablosundan (zorunluluk/tekrar/kod sistemi) yapılır.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Enabiz\Schemas\*.json" />
+  </ItemGroup>
+
+</Project>

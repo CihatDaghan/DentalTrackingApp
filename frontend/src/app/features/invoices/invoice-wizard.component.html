@@ -1,0 +1,568 @@
+<app-page-header
+  [title]="'invoices.wizard.title' | transloco"
+  [subtitle]="'invoices.wizard.subtitle' | transloco"
+>
+  <p-button
+    [label]="'common.cancel' | transloco"
+    icon="fa-solid fa-xmark"
+    size="small"
+    severity="secondary"
+    [text]="true"
+    data-testid="wizard-cancel"
+    (onClick)="cancelWizard()"
+  />
+</app-page-header>
+
+<div class="dt-card p-5">
+  <p-stepper [value]="step()" (valueChange)="goTo($event ?? 1)" data-testid="invoice-stepper">
+    <p-step-list>
+      <p-step [value]="1">{{ 'invoices.wizard.step1' | transloco }}</p-step>
+      <p-step [value]="2">{{ 'invoices.wizard.step2' | transloco }}</p-step>
+      <p-step [value]="3">{{ 'invoices.wizard.step3' | transloco }}</p-step>
+    </p-step-list>
+
+    <p-step-panels>
+      <!-- ---------------- Adim 1: Alici ---------------- -->
+      <p-step-panel [value]="1">
+        <ng-template #content>
+          <div class="flex flex-col gap-5 pt-4">
+            <div class="flex flex-col gap-2">
+              <span class="text-sm font-medium text-slate-600">
+                {{ 'invoices.wizard.buyerType' | transloco }}
+              </span>
+              <p-selectbutton
+                [options]="buyerModeOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="buyerMode()"
+                (ngModelChange)="buyerMode.set($event)"
+                [allowEmpty]="false"
+                data-testid="wizard-buyer-mode"
+              />
+            </div>
+
+            @if (buyerMode() === 'company') {
+              <div class="flex max-w-xl flex-col gap-1">
+                <label for="wz-company" class="text-sm font-medium text-slate-600">
+                  {{ 'invoices.wizard.company' | transloco }}
+                </label>
+                <p-select
+                  inputId="wz-company"
+                  [options]="companyOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="companyId()"
+                  (ngModelChange)="onCompanyChange($event)"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="true"
+                  [fluid]="true"
+                  appendTo="body"
+                  [placeholder]="'invoices.wizard.companyPlaceholder' | transloco"
+                  data-testid="wizard-company"
+                />
+
+                @if (selectedCompany(); as company) {
+                  <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                    <span class="text-slate-500">
+                      {{ 'invoices.field.tcknVkn' | transloco }}:
+                      <span class="font-mono text-slate-700">{{ company.vkn || '—' }}</span>
+                    </span>
+                    @if (gibLoading()) {
+                      <span class="text-xs text-slate-400">{{ 'common.loading' | transloco }}</span>
+                    } @else if (gibTaxpayer(); as tax) {
+                      @if (tax.isEInvoiceUser) {
+                        <span
+                          class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                          data-testid="wizard-gib-badge"
+                        >
+                          <i class="fa-solid fa-check mr-1" aria-hidden="true"></i>
+                          {{ 'invoices.wizard.gibRegistered' | transloco }}
+                        </span>
+                      } @else {
+                        <span
+                          class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                          data-testid="wizard-gib-badge"
+                        >
+                          <i class="fa-solid fa-xmark mr-1" aria-hidden="true"></i>
+                          {{ 'invoices.wizard.gibNotRegistered' | transloco }}
+                        </span>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="flex max-w-xl flex-col gap-1">
+              <label for="wz-patient" class="text-sm font-medium text-slate-600">
+                @if (buyerMode() === 'company') {
+                  {{ 'invoices.wizard.sourcePatient' | transloco }}
+                } @else {
+                  {{ 'invoices.wizard.patient' | transloco }}
+                }
+              </label>
+              <app-patient-search-select
+                inputId="wz-patient"
+                [ngModel]="patientOption()"
+                (selected)="onPatientSelected($event)"
+                data-testid="wizard-patient"
+              />
+              @if (buyerMode() === 'company') {
+                <span class="text-xs text-slate-400">
+                  {{ 'invoices.wizard.sourcePatientHint' | transloco }}
+                </span>
+              }
+            </div>
+
+            @if (patient(); as p) {
+              <div
+                class="flex max-w-xl flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4"
+                data-testid="wizard-patient-card"
+              >
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                  <span class="font-semibold text-slate-700">
+                    {{ p.firstName }} {{ p.lastName }}
+                  </span>
+                  <span class="text-slate-500">#{{ p.fileNo }}</span>
+                  <span class="text-slate-500">
+                    {{ 'invoices.field.nationality' | transloco }}: {{ p.nationalityCode }}
+                  </span>
+                  @if (p.passportNo) {
+                    <span class="text-slate-500">
+                      {{ 'invoices.field.passportNo' | transloco }}:
+                      <span class="font-mono">{{ p.passportNo }}</span>
+                    </span>
+                  }
+                </div>
+
+                @if (isForeignEligible()) {
+                  <label
+                    class="mt-1 flex cursor-pointer items-center gap-3 text-sm"
+                    data-testid="wizard-foreign-toggle"
+                  >
+                    <p-toggleswitch
+                      [ngModel]="isForeignPatient()"
+                      (ngModelChange)="isForeignPatient.set($event)"
+                      inputId="wz-foreign"
+                    />
+                    <span class="font-medium text-slate-700">
+                      {{ 'invoices.wizard.foreignPatient' | transloco }}
+                    </span>
+                  </label>
+                }
+              </div>
+            }
+
+            <div class="flex justify-end gap-2 pt-2">
+              <p-button
+                [label]="'common.continue' | transloco"
+                icon="fa-solid fa-arrow-right"
+                iconPos="right"
+                [disabled]="!canLeaveStep1()"
+                data-testid="wizard-next-1"
+                (onClick)="next()"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </p-step-panel>
+
+      <!-- ---------------- Adim 2: Kalemler + senaryo ---------------- -->
+      <p-step-panel [value]="2">
+        <ng-template #content>
+          <div class="flex flex-col gap-4 pt-4">
+            <!-- Senaryo anahtarlari -->
+            <div class="flex flex-wrap items-center gap-6 rounded-lg bg-slate-50 px-4 py-3">
+              @if (isForeignEligible()) {
+                <label class="flex cursor-pointer items-center gap-2 text-sm">
+                  <p-toggleswitch
+                    [ngModel]="isForeignPatient()"
+                    (ngModelChange)="isForeignPatient.set($event)"
+                    inputId="wz-foreign-2"
+                    data-testid="wizard-foreign-toggle-2"
+                  />
+                  <span class="font-medium text-slate-700">
+                    {{ 'invoices.wizard.foreignPatient' | transloco }}
+                  </span>
+                </label>
+              }
+              @if (buyerMode() === 'company') {
+                <label class="flex cursor-pointer items-center gap-2 text-sm">
+                  <p-toggleswitch
+                    [ngModel]="isGovernmentBuyer()"
+                    (ngModelChange)="isGovernmentBuyer.set($event)"
+                    inputId="wz-government"
+                    data-testid="wizard-government-toggle"
+                  />
+                  <span class="font-medium text-slate-700">
+                    {{ 'invoices.wizard.governmentBuyer' | transloco }}
+                  </span>
+                </label>
+              }
+              <label class="flex cursor-pointer items-center gap-2 text-sm">
+                <p-toggleswitch
+                  [ngModel]="isRefund()"
+                  (ngModelChange)="onRefundChange($event)"
+                  inputId="wz-refund"
+                  data-testid="wizard-refund-toggle"
+                />
+                <span class="font-medium text-slate-700">
+                  {{ 'invoices.wizard.refund' | transloco }}
+                </span>
+              </label>
+              @if (isRefund()) {
+                <div class="flex min-w-64 flex-col gap-1">
+                  <label for="wz-source" class="text-[11px] font-medium text-slate-500">
+                    {{ 'invoices.wizard.sourceInvoice' | transloco }}
+                  </label>
+                  <p-select
+                    inputId="wz-source"
+                    [options]="sourceInvoiceOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="sourceInvoiceId()"
+                    (ngModelChange)="sourceInvoiceId.set($event)"
+                    [filter]="true"
+                    filterBy="label"
+                    [fluid]="true"
+                    appendTo="body"
+                    [placeholder]="'invoices.wizard.sourceInvoicePlaceholder' | transloco"
+                    data-testid="wizard-source-invoice"
+                  />
+                </div>
+              }
+            </div>
+
+            <!-- Yapildi tedaviler -->
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <h3 class="m-0 text-base font-semibold text-slate-700">
+                  {{ 'invoices.wizard.doneTreatments' | transloco }}
+                </h3>
+                @if (treatments().length > 0) {
+                  <p-button
+                    [label]="'invoices.wizard.toggleAll' | transloco"
+                    size="small"
+                    severity="secondary"
+                    [text]="true"
+                    data-testid="wizard-toggle-all"
+                    (onClick)="toggleAll()"
+                  />
+                }
+              </div>
+
+              @if (treatmentsLoading()) {
+                <div class="py-6 text-center text-sm text-slate-400">
+                  {{ 'common.loading' | transloco }}
+                </div>
+              } @else if (treatments().length === 0) {
+                <div
+                  class="flex flex-col items-center gap-2 rounded-lg border border-dashed border-slate-200 py-8 text-slate-400"
+                >
+                  <i class="fa-regular fa-folder-open text-2xl" aria-hidden="true"></i>
+                  <span class="text-sm">{{ 'invoices.wizard.noDoneTreatments' | transloco }}</span>
+                </div>
+              } @else {
+                <p-table [value]="treatments()" [rowHover]="true" dataKey="id">
+                  <ng-template #header>
+                    <tr>
+                      <th style="width: 3rem"></th>
+                      <th style="width: 8rem">{{ 'invoices.wizard.col.date' | transloco }}</th>
+                      <th style="width: 5rem">{{ 'invoices.wizard.col.tooth' | transloco }}</th>
+                      <th>{{ 'invoices.wizard.col.treatment' | transloco }}</th>
+                      <th class="text-right!" style="width: 9rem">
+                        {{ 'invoices.wizard.col.amount' | transloco }}
+                      </th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-record>
+                    <tr
+                      class="cursor-pointer"
+                      [attr.data-testid]="'wizard-treatment-' + record.id"
+                      (click)="toggleTreatment(record)"
+                    >
+                      <td>
+                        <p-checkbox
+                          [binary]="true"
+                          [ngModel]="isSelected(record)"
+                          (ngModelChange)="toggleTreatment(record)"
+                          (click)="$event.stopPropagation()"
+                          [attr.data-testid]="'wizard-treatment-cb-' + record.id"
+                        />
+                      </td>
+                      <td>{{ record.performedAtUtc | trDate }}</td>
+                      <td class="font-mono text-xs">{{ record.toothNumber || '—' }}</td>
+                      <td class="font-medium text-slate-700">{{ record.treatmentName }}</td>
+                      <td class="text-right font-semibold">
+                        {{ record.price - record.discountAmount | money }}
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              }
+            </div>
+
+            <!-- Karar karti -->
+            @if (previewLoading()) {
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">
+                {{ 'invoices.wizard.decisionLoading' | transloco }}
+              </div>
+            } @else {
+              @if (preview(); as pv) {
+              <div
+                class="flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-5"
+                data-testid="wizard-decision-card"
+              >
+                <div class="flex flex-wrap items-center gap-2">
+                  <i class="fa-solid fa-scale-balanced text-blue-500" aria-hidden="true"></i>
+                  <span class="text-sm font-semibold text-blue-900">
+                    {{ 'invoices.wizard.decisionTitle' | transloco }}
+                  </span>
+                  <app-invoice-kind-tag [value]="pv.documentKind" />
+                  <app-invoice-scenario-tag [value]="pv.typeCode" />
+                  @if (pv.profileId) {
+                    <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                      {{ pv.profileId }}
+                    </span>
+                  }
+                  @if (pv.exemptionCode) {
+                    <span
+                      class="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700"
+                      data-testid="wizard-exemption-badge"
+                    >
+                      {{ 'invoices.wizard.exemptionCode' | transloco }} {{ pv.exemptionCode }} ·
+                      {{ 'invoices.wizard.vatZero' | transloco }}
+                    </span>
+                  }
+                  @if (pv.withholdingCode) {
+                    <span
+                      class="rounded-full bg-fuchsia-100 px-2.5 py-1 text-xs font-semibold text-fuchsia-700"
+                    >
+                      {{ 'invoices.wizard.withholdingCode' | transloco }} {{ pv.withholdingCode }}
+                      @if (pv.withholdingPercent) {
+                        · %{{ pv.withholdingPercent }}
+                      }
+                    </span>
+                  }
+                </div>
+
+                <p class="m-0 text-[15px] leading-relaxed text-blue-900" data-testid="wizard-rationale">
+                  {{ pv.rationale }}
+                </p>
+
+                <p class="m-0 flex items-center gap-2 text-xs text-blue-700/80">
+                  <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                  {{ 'invoices.wizard.kindLocked' | transloco }}
+                </p>
+              </div>
+              } @else if (selectedIds().length === 0) {
+                <div
+                  class="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-400"
+                  data-testid="wizard-decision-empty"
+                >
+                  {{ 'invoices.wizard.selectToDecide' | transloco }}
+                </div>
+              }
+            }
+
+            <!-- Hatalar -->
+            @if (previewErrors().length > 0) {
+              <div
+                class="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4"
+                data-testid="wizard-errors"
+              >
+                <span class="flex items-center gap-2 text-sm font-semibold text-red-700">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  {{ 'invoices.wizard.errorsTitle' | transloco }}
+                </span>
+                <ul class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-red-700/90">
+                  @for (error of previewErrors(); track error) {
+                    <li>{{ error }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- Uyarilar -->
+            @if (previewWarnings().length > 0) {
+              <div
+                class="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4"
+                data-testid="wizard-warnings"
+              >
+                <span class="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                  {{ 'invoices.wizard.warningsTitle' | transloco }}
+                </span>
+                <ul class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-amber-800/90">
+                  @for (warning of previewWarnings(); track warning) {
+                    <li>{{ warning }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="flex justify-between gap-2 pt-2">
+              <p-button
+                [label]="'common.back' | transloco"
+                icon="fa-solid fa-arrow-left"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="wizard-prev-2"
+                (onClick)="previous()"
+              />
+              <p-button
+                [label]="'common.continue' | transloco"
+                icon="fa-solid fa-arrow-right"
+                iconPos="right"
+                [disabled]="!canLeaveStep2()"
+                data-testid="wizard-next-2"
+                (onClick)="next()"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </p-step-panel>
+
+      <!-- ---------------- Adim 3: Onizleme ve gonder ---------------- -->
+      <p-step-panel [value]="3">
+        <ng-template #content>
+          <div class="flex flex-col gap-4 pt-4">
+            @if (preview(); as pv) {
+              <div class="flex flex-wrap items-center gap-2">
+                <app-invoice-kind-tag [value]="pv.documentKind" />
+                <app-invoice-scenario-tag [value]="pv.typeCode" />
+                <span class="text-sm text-slate-500">{{ pv.buyerName }}</span>
+              </div>
+
+              <p-table [value]="pv.lines" dataKey="seqNo" data-testid="wizard-summary-lines">
+                <ng-template #header>
+                  <tr>
+                    <th style="width: 3rem">#</th>
+                    <th>{{ 'invoices.line.name' | transloco }}</th>
+                    <th class="text-right!" style="width: 5rem">
+                      {{ 'invoices.line.quantity' | transloco }}
+                    </th>
+                    <th class="text-right!" style="width: 8rem">
+                      {{ 'invoices.line.unitPrice' | transloco }}
+                    </th>
+                    <th class="text-right!" style="width: 5rem">
+                      {{ 'invoices.line.vatRate' | transloco }}
+                    </th>
+                    <th class="text-right!" style="width: 9rem">
+                      {{ 'invoices.line.lineTotal' | transloco }}
+                    </th>
+                  </tr>
+                </ng-template>
+                <ng-template #body let-line>
+                  <tr>
+                    <td class="text-slate-400">{{ line.seqNo }}</td>
+                    <td class="font-medium text-slate-700">{{ line.itemName }}</td>
+                    <td class="text-right">{{ line.quantity }}</td>
+                    <td class="text-right">{{ line.unitPrice | money }}</td>
+                    <td class="text-right">%{{ line.vatRate }}</td>
+                    <td class="text-right font-semibold">{{ line.lineTotal | money }}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+
+              <div class="flex justify-end">
+                <dl class="w-full max-w-sm text-sm" data-testid="wizard-totals">
+                  <div class="flex justify-between border-b border-slate-100 py-1.5">
+                    <dt class="text-slate-500">{{ 'invoices.totals.subTotal' | transloco }}</dt>
+                    <dd class="m-0 font-medium">{{ pv.totals.subTotal | money }}</dd>
+                  </div>
+                  <div class="flex justify-between border-b border-slate-100 py-1.5">
+                    <dt class="text-slate-500">{{ 'invoices.totals.discount' | transloco }}</dt>
+                    <dd class="m-0 font-medium">{{ pv.totals.discountTotal | money }}</dd>
+                  </div>
+                  <div class="flex justify-between border-b border-slate-100 py-1.5">
+                    <dt class="text-slate-500">{{ 'invoices.totals.vat' | transloco }}</dt>
+                    <dd class="m-0 font-medium">{{ pv.totals.vatTotal | money }}</dd>
+                  </div>
+                  @if (pv.totals.withholdingTotal) {
+                    <div class="flex justify-between border-b border-slate-100 py-1.5">
+                      <dt class="text-slate-500">{{ 'invoices.totals.withholding' | transloco }}</dt>
+                      <dd class="m-0 font-medium text-fuchsia-700">
+                        −{{ pv.totals.withholdingTotal | money }}
+                      </dd>
+                    </div>
+                  }
+                  @if (pv.totals.gvStopajTotal) {
+                    <div class="flex justify-between border-b border-slate-100 py-1.5">
+                      <dt class="text-slate-500">{{ 'invoices.totals.gvStopaj' | transloco }}</dt>
+                      <dd class="m-0 font-medium text-fuchsia-700">
+                        −{{ pv.totals.gvStopajTotal | money }}
+                      </dd>
+                    </div>
+                  }
+                  <div class="flex justify-between pt-2.5">
+                    <dt class="font-semibold text-slate-700">
+                      {{ 'invoices.totals.payable' | transloco }}
+                    </dt>
+                    <dd class="m-0 text-lg font-semibold text-blue-600" data-testid="wizard-payable">
+                      {{ pv.totals.payableAmount | money }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              @if (previewWarnings().length > 0) {
+                <div class="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <span class="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    {{ 'invoices.wizard.warningsTitle' | transloco }}
+                  </span>
+                  <ul class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-amber-800/90">
+                    @for (warning of previewWarnings(); track warning) {
+                      <li>{{ warning }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            }
+
+            <div class="flex flex-wrap justify-between gap-2 pt-2">
+              <p-button
+                [label]="'common.back' | transloco"
+                icon="fa-solid fa-arrow-left"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="wizard-prev-3"
+                (onClick)="previous()"
+              />
+              <div class="flex flex-wrap gap-2">
+                <p-button
+                  [label]="'invoices.wizard.saveDraft' | transloco"
+                  icon="fa-solid fa-floppy-disk"
+                  severity="secondary"
+                  [outlined]="true"
+                  [loading]="saving()"
+                  [disabled]="!canLeaveStep2()"
+                  data-testid="wizard-save-draft"
+                  (onClick)="saveDraft()"
+                  *hasPermission="'invoice.create'"
+                />
+                <p-button
+                  [label]="'invoices.wizard.saveAndSend' | transloco"
+                  icon="fa-solid fa-paper-plane"
+                  [loading]="saving()"
+                  [disabled]="!canLeaveStep2()"
+                  data-testid="wizard-save-send"
+                  (onClick)="saveAndSend()"
+                  *hasPermission="'invoice.send'"
+                />
+              </div>
+            </div>
+
+            @if (saving() && chainStep(); as current) {
+              <div class="text-right text-xs text-slate-400" data-testid="wizard-chain-step">
+                {{ 'invoices.chainStep.' + current | transloco }}
+              </div>
+            }
+          </div>
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
+</div>

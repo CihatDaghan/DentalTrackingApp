@@ -1,0 +1,63 @@
+<p-table
+  [value]="rows()"
+  [lazy]="true"
+  (onLazyLoad)="onLazyLoad($event)"
+  [paginator]="true"
+  [rows]="pageSize()"
+  [(first)]="first"
+  [totalRecords]="totalCount()"
+  [loading]="loading()"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  [rowHover]="true"
+  [showCurrentPageReport]="true"
+  [currentPageReportTemplate]="reportTemplate()"
+  [dataKey]="dataKey()"
+  [expandedRowKeys]="expandedRowKeys()"
+>
+  <ng-template #header>
+    <tr>
+      @for (col of columns(); track col.field) {
+        @if (col.sortField) {
+          <th
+            [pSortableColumn]="col.sortField"
+            [style.width]="col.width ?? null"
+            [style.text-align]="col.align ?? null"
+          >
+            {{ col.headerKey | transloco }}
+            <p-sortIcon [field]="col.sortField" />
+          </th>
+        } @else {
+          <th [style.width]="col.width ?? null" [style.text-align]="col.align ?? null">
+            {{ col.headerKey | transloco }}
+          </th>
+        }
+      }
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-row>
+    <tr class="app-table__row" (click)="rowClick.emit(row)">
+      <ng-container *ngTemplateOutlet="rowCells() ?? null; context: { $implicit: row }" />
+    </tr>
+  </ng-template>
+
+  <!-- Opsiyonel satir detayi: yalniz `#rowExpansion` projekte edildiginde icerik uretir. -->
+  <ng-template #expandedrow let-row>
+    <tr class="app-table__expansion">
+      <td [attr.colspan]="columns().length">
+        <ng-container *ngTemplateOutlet="rowExpansion() ?? null; context: { $implicit: row }" />
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #emptymessage>
+    <tr>
+      <td [attr.colspan]="columns().length">
+        <div class="app-table__empty">
+          <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+          <span>{{ 'table.empty' | transloco }}</span>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

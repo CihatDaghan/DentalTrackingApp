@@ -1,0 +1,528 @@
+{
+ "paket": "103",
+ "alanlar": [
+  {
+   "id": "0",
+   "depth": 0,
+   "ad": "HASTA_TAKIP_BILGISI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "0.0",
+   "depth": 1,
+   "ad": "SYSTakipNo",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Gönderilecek paketin ait olduğu hasta başvurusu için sistem tarafından ilk kayıt aşamasında verilen SYS Takip Numarası bilgisi"
+  },
+  {
+   "id": "1",
+   "depth": 0,
+   "ad": "MUAYENE_BILGILERI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Hayır",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0",
+   "depth": 1,
+   "ad": "CHECK_UP_BILGISI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "c9d56fee-d143-4602-ad7b-ba131ef92ad9",
+   "detayBaslik": "CHECK_UP_BILGISI"
+  },
+  {
+   "id": "1.1",
+   "depth": 1,
+   "ad": "SIGARA_KULLANIM_DURUMU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "c9d56fee-d143-4602-ad7b-ba131ef92ad9",
+   "detayBaslik": "SIGARA_KULLANIM_DURUMU"
+  },
+  {
+   "id": "1.2",
+   "depth": 1,
+   "ad": "PAKETE_AIT_ISLEM_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "İlgili paketin oluşturulma zamanıdır. Seçimli bir veri elemanıdır. zaman bilgisi DateTime formatında gönderilmelidir."
+  },
+  {
+   "id": "1.3",
+   "depth": 1,
+   "ad": "MUAYENE_BASLANGIC_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": ""
+  },
+  {
+   "id": "1.4",
+   "depth": 1,
+   "ad": "MUAYENE_BITIS_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": ""
+  },
+  {
+   "id": "1.5",
+   "depth": 1,
+   "ad": "EPIKRIZ_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Ayaktan ve yatan hastalar için doktor tarafından yazılan Muayene Bulguları bilgilerinin bulunduğu nesne"
+  },
+  {
+   "id": "1.5.0",
+   "depth": 2,
+   "ad": "EPIKRIZ_BILGISI_BASLIK",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Ayaktan ve yatan hastalar için hekimlerin yazdığı epikriz Başlık bilgisi. örn:\"Hikayesi\""
+  },
+  {
+   "id": "1.5.1",
+   "depth": 2,
+   "ad": "EPIKRIZ_BILGISI_ACIKLAMA",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Ayaktan ve yatan hastalar için hekimlerin yazdığı epikriz Açıklama bilgisi"
+  },
+  {
+   "id": "1.6",
+   "depth": 1,
+   "ad": "TANI_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Evet",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Hastanın ilgili başvurusunda konulmuş tanıların bilgilerini içeren nesne"
+  },
+  {
+   "id": "1.6.0",
+   "depth": 2,
+   "ad": "TANI_TURU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "55894edb-1a8c-4f7f-a447-0119e61c14f1",
+   "detayBaslik": "TANI_TURU"
+  },
+  {
+   "id": "1.6.1",
+   "depth": 2,
+   "ad": "ICD10",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen Tanı kodu ve ilgili Tanı koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "c3eaabad-8c4c-56ee-e043-14031b0a5530",
+   "detayBaslik": "ICD10"
+  },
+  {
+   "id": "1.7",
+   "depth": 1,
+   "ad": "BOY_KILO_BILGILERI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.7.0",
+   "depth": 2,
+   "ad": "BOY",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "santimetre cinsinden boy bilgisidir."
+  },
+  {
+   "id": "1.7.1",
+   "depth": 2,
+   "ad": "KILO",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "gram cinsinden ağırlık bilgisidir."
+  },
+  {
+   "id": "1.8",
+   "depth": 1,
+   "ad": "NADIR_HASTALIK_TANI_BILGILERI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.8.0",
+   "depth": 2,
+   "ad": "TIBBI_GENETIK_UZMAN_GORUSU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "8380d552-c64b-42b4-94d8-8ca8a617ac16",
+   "detayBaslik": "TIBBI_GENETIK_UZMAN_GORUSU"
+  },
+  {
+   "id": "1.8.1",
+   "depth": 2,
+   "ad": "NADIR_HASTALIK_TANI_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.8.1.0",
+   "depth": 3,
+   "ad": "NADIR_HASTALIK_TANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "e56ff71b-82e0-4b48-adae-cf70e1912c93",
+   "detayBaslik": "NADIR_HASTALIK_TANI"
+  },
+  {
+   "id": "1.9",
+   "depth": 1,
+   "ad": "ASA_SKORU_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.9.0",
+   "depth": 2,
+   "ad": "ASA_SKORU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "ASA_SKORU_BILGISI tagi mevcutsa ASA_SKORU da gönderilmedilir.",
+   "codeSystemGuid": "d8b8c1b6-901c-4d9e-b756-0e460a6a9e1e",
+   "detayBaslik": "ASA_SKORU"
+  },
+  {
+   "id": "2",
+   "depth": 0,
+   "ad": "HASTA_RECETE_BILGILERI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Hayır",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "2.0",
+   "depth": 1,
+   "ad": "RECETE_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Hastaya ilgili başvuru içerisinde verilmiş olan Reçete bilgilerinin bulunduğu nesne"
+  },
+  {
+   "id": "2.0.0",
+   "depth": 2,
+   "ad": "RECETE_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Reçete Tarihi bilgisi. örn:\"201410131128\""
+  },
+  {
+   "id": "2.0.1",
+   "depth": 2,
+   "ad": "RECETE_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Medula e-Reçete numarası bilgisidir, bu bilgi olmadığı durumda sağlık kurumu tarafından üretilen tekil ID bilgisi gönderilecektir"
+  },
+  {
+   "id": "2.0.2",
+   "depth": 2,
+   "ad": "RECETE_TURU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen Reçete Türü kodu ve ilgili Reçete Türü koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "c2fbe9bb-f6b3-4cb5-8670-47890ed7ed4b",
+   "detayBaslik": "RECETE_TURU"
+  },
+  {
+   "id": "2.0.3",
+   "depth": 2,
+   "ad": "HEKIM_KIMLIK_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "TCKimlikNo",
+   "tanim": "Reçete veren Hekim Kimlik Numarası bilgisi"
+  },
+  {
+   "id": "2.0.4",
+   "depth": 2,
+   "ad": "ILAC_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "İlaç detay bilgilerinin olduğu nesne"
+  },
+  {
+   "id": "2.0.4.0",
+   "depth": 3,
+   "ad": "ILAC_BARKODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlacın Barkod bilgisi. ILAC_BILGISI tag var ise gönderimi zorunludur."
+  },
+  {
+   "id": "2.0.4.1",
+   "depth": 3,
+   "ad": "ILAC_ADI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlacın Ad bilgisi. ILAC_BILGISI tag var ise gönderimi zorunludur."
+  },
+  {
+   "id": "2.0.4.2",
+   "depth": 3,
+   "ad": "KUTU_ADETI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "İlacın Kutu Adeti bilgisi"
+  },
+  {
+   "id": "2.0.4.3",
+   "depth": 3,
+   "ad": "ILAC_KULLANIM_SEKLI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen İlaç Kullanım Şekli kodu ve ilgili İlaç Kullanım Şekli koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "32d57611-4928-46da-afac-624aaaa388d8",
+   "detayBaslik": "ILAC_KULLANIM_SEKLI"
+  },
+  {
+   "id": "2.0.4.4",
+   "depth": 3,
+   "ad": "ILAC_KULLANIM_SAYISI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "İlacın Kullanım Sayısı bilgisi"
+  },
+  {
+   "id": "2.0.4.5",
+   "depth": 3,
+   "ad": "ILAC_KULLANIM_DOZU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "İlacın Kullanım Dozu bilgisi"
+  },
+  {
+   "id": "2.0.4.6",
+   "depth": 3,
+   "ad": "ILAC_KULLANIM_PERIYODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "İlacın Kullanım Periyodu bilgisi"
+  },
+  {
+   "id": "2.0.4.7",
+   "depth": 3,
+   "ad": "ILAC_KULLANIM_PERIYODU_BIRIMI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen İlaç Kullanım Periyodu Birimi kodu ve ilgili İlaç Kullanım Periyodu Birimi koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "64408499-b82a-4e64-805e-e821aa0c64c9",
+   "detayBaslik": "ILAC_KULLANIM_PERIYODU_BIRIMI"
+  },
+  {
+   "id": "2.0.4.8",
+   "depth": 3,
+   "ad": "ILAC_ACIKLAMA",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlaç ile ilgili Açıklama bilgisi"
+  },
+  {
+   "id": "3",
+   "depth": 0,
+   "ad": "HASTA_RAPOR_BILGILERI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Hayır",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "3.0",
+   "depth": 1,
+   "ad": "RAPOR_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Evet",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Hastaya ilgili başvuru içerisinde verilmiş olan Rapor bilgilerinin bulunduğu nesne"
+  },
+  {
+   "id": "3.0.0",
+   "depth": 2,
+   "ad": "RAPOR_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Rapor verilis Tarihi bilgisi. örn:\"201409131137\""
+  },
+  {
+   "id": "3.0.1",
+   "depth": 2,
+   "ad": "RAPOR_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Rapor Numarası bilgisi"
+  },
+  {
+   "id": "3.0.2",
+   "depth": 2,
+   "ad": "RAPOR_TURU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen Rapor Türü kodu ve ilgili Rapor Türü koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "3fb672ac-0675-44ef-9f91-86856dc79370",
+   "detayBaslik": "RAPOR_TURU"
+  },
+  {
+   "id": "3.0.3",
+   "depth": 2,
+   "ad": "RAPOR_BASLANGIC_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Rapor Başlangıç Tarihi bilgisi. örn:\"201410130000\""
+  },
+  {
+   "id": "3.0.4",
+   "depth": 2,
+   "ad": "RAPOR_BITIS_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Rapor Bitiş Tarihi bilgisi. örn:\"201410200000\""
+  },
+  {
+   "id": "3.0.5",
+   "depth": 2,
+   "ad": "RAPOR_TAKIP_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Rapor medula sistemine gönderildi ise Takip Numarası bilgisi"
+  },
+  {
+   "id": "3.0.6",
+   "depth": 2,
+   "ad": "RAPOR_PDF_BILGISI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Ilgili rapora ait PDF dosyasinin Base64 formatinda bilgisi."
+  },
+  {
+   "id": "3.0.7",
+   "depth": 2,
+   "ad": "RAPOR_HEKIM_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Rapor yazan doktor bilgilerinin bulunduğu nesne"
+  },
+  {
+   "id": "3.0.7.0",
+   "depth": 3,
+   "ad": "HEKIM_KIMLIK_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "TCKimlikNo",
+   "tanim": "Rapor veren doktor TC Kimlik Numarası bilgisi"
+  }
+ ],
+ "sonucKodlari": []
+}

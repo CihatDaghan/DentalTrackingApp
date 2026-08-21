@@ -1,0 +1,365 @@
+<div class="cat">
+  <!-- Sol: kategoriler -->
+  <aside class="cat__sidebar dt-card">
+    <div class="cat__sidebar-head">
+      <h3 class="cat__title">{{ 'catalog.categories' | transloco }}</h3>
+      <ng-container *hasPermission="'settings.update'">
+        <p-button
+          icon="fa-solid fa-plus"
+          size="small"
+          [text]="true"
+          [pTooltip]="'catalog.newCategory' | transloco"
+          tooltipPosition="top"
+          data-testid="new-category-btn"
+          (onClick)="openCategoryDialog(null)"
+        />
+      </ng-container>
+    </div>
+
+    <div class="cat__cats" data-testid="category-list">
+      <button
+        type="button"
+        class="cat__cat"
+        [class.cat__cat--active]="selectedCategoryId() === null"
+        (click)="selectCategory(null)"
+      >
+        <span class="cat__cat-name">{{ 'catalog.allCategories' | transloco }}</span>
+      </button>
+      @for (cat of categories(); track cat.id) {
+        <div
+          class="cat__cat"
+          [class.cat__cat--active]="selectedCategoryId() === cat.id"
+          [attr.data-testid]="'category-' + cat.id"
+          role="button"
+          tabindex="0"
+          (click)="selectCategory(cat.id)"
+          (keydown.enter)="selectCategory(cat.id)"
+        >
+          <span class="cat__dot" [style.background]="cat.colorHex ?? '#94a3b8'"></span>
+          <span class="cat__cat-name">{{ cat.name }}</span>
+          <span class="cat__cat-count">{{ cat.treatmentCount }}</span>
+          <span class="cat__cat-actions" *hasPermission="'settings.update'">
+            <button
+              type="button"
+              class="cat__icon-btn"
+              [attr.data-testid]="'edit-category-' + cat.id"
+              (click)="$event.stopPropagation(); openCategoryDialog(cat)"
+            >
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              class="cat__icon-btn cat__icon-btn--danger"
+              (click)="$event.stopPropagation(); deleteCategory(cat)"
+            >
+              <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+            </button>
+          </span>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <!-- Sag: tedavi tablosu -->
+  <section class="cat__main dt-card">
+    <div class="cat__toolbar">
+      <input
+        pInputText
+        type="text"
+        class="cat__search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearchInput($event)"
+        data-testid="catalog-search"
+        [placeholder]="'treatment.searchPlaceholder' | transloco"
+      />
+      <span class="cat__spacer"></span>
+      <ng-container *hasPermission="'settings.update'">
+        <p-button
+          [label]="'catalog.newTreatment' | transloco"
+          icon="fa-solid fa-plus"
+          size="small"
+          data-testid="new-treatment-btn"
+          (onClick)="openDefDialog(null)"
+        />
+      </ng-container>
+    </div>
+
+    <p-table
+      [value]="items()"
+      [loading]="itemsLoading()"
+      [rowHover]="true"
+      [paginator]="items().length > 25"
+      [rows]="25"
+      size="small"
+      data-testid="catalog-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 6.5rem">{{ 'catalog.columns.code' | transloco }}</th>
+          <th>{{ 'catalog.columns.nameTr' | transloco }}</th>
+          <th>{{ 'catalog.columns.nameEn' | transloco }}</th>
+          <th>{{ 'catalog.columns.category' | transloco }}</th>
+          <th class="text-right">{{ 'catalog.columns.defaultPrice' | transloco }}</th>
+          <th style="width: 4.5rem" class="text-right">{{ 'catalog.columns.vat' | transloco }}</th>
+          <th style="width: 5.5rem">{{ 'catalog.columns.scope' | transloco }}</th>
+          <th style="width: 5rem" class="text-center">{{ 'catalog.columns.surface' | transloco }}</th>
+          <th style="width: 4.5rem" class="text-right">{{ 'catalog.columns.duration' | transloco }}</th>
+          <th style="width: 5rem">{{ 'catalog.columns.active' | transloco }}</th>
+          <th style="width: 6rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-def>
+        <tr [attr.data-testid]="'catalog-row-' + def.id">
+          <td class="font-mono text-xs">{{ def.code }}</td>
+          <td class="font-medium">{{ def.name }}</td>
+          <td class="text-slate-500">{{ def.nameEn || '—' }}</td>
+          <td>
+            <span class="cat__opt">
+              <span class="cat__dot" [style.background]="def.categoryColorHex ?? '#94a3b8'"></span>
+              {{ def.categoryName }}
+            </span>
+          </td>
+          <td class="text-right font-medium">{{ def.defaultPrice | money }}</td>
+          <td class="text-right">%{{ def.vatRate }}</td>
+          <td>{{ scopeLabel(def.toothScope) }}</td>
+          <td class="text-center">
+            @if (def.requiresSurface) {
+              <i class="fa-solid fa-check text-emerald-600" aria-hidden="true"></i>
+            } @else {
+              <span class="text-slate-300">—</span>
+            }
+          </td>
+          <td class="text-right">{{ def.defaultDurationMinutes ?? '—' }}</td>
+          <td>
+            <p-tag
+              [value]="(def.isActive ? 'catalog.active' : 'catalog.passive') | transloco"
+              [severity]="def.isActive ? 'success' : 'secondary'"
+            />
+          </td>
+          <td>
+            <div class="flex justify-end gap-1" *hasPermission="'settings.update'">
+              <p-button
+                icon="fa-solid fa-pen"
+                size="small"
+                [text]="true"
+                severity="secondary"
+                [attr.data-testid]="'edit-treatment-' + def.id"
+                (onClick)="openDefDialog(def)"
+              />
+              <p-button
+                icon="fa-solid fa-trash-can"
+                size="small"
+                [text]="true"
+                severity="danger"
+                (onClick)="deleteDef(def)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="11">
+            <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+              <i class="fa-solid fa-book-medical text-2xl" aria-hidden="true"></i>
+              <span>{{ 'table.empty' | transloco }}</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>
+
+<!-- Kategori dialogu -->
+<p-dialog
+  [visible]="categoryDialogVisible()"
+  (visibleChange)="categoryDialogVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '26rem' }"
+  [header]="(editingCategory ? 'catalog.editCategory' : 'catalog.newCategory') | transloco"
+>
+  <form [formGroup]="categoryForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveCategory()">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="cg-name">{{ 'catalog.form.nameTr' | transloco }} *</label>
+      <input id="cg-name" pInputText formControlName="name" data-testid="category-name-input" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="cg-nameEn">{{ 'catalog.form.nameEn' | transloco }}</label>
+      <input id="cg-nameEn" pInputText formControlName="nameEn" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">{{ 'catalog.form.color' | transloco }}</label>
+      <div class="cat__swatches">
+        @for (color of colorSwatches; track color) {
+          <button
+            type="button"
+            class="cat__swatch"
+            [class.cat__swatch--active]="categoryForm.controls.colorHex.value === color"
+            [style.background]="color"
+            (click)="categoryForm.controls.colorHex.setValue(color)"
+          ></button>
+        }
+        <input
+          pInputText
+          class="cat__hex"
+          formControlName="colorHex"
+          maxlength="7"
+          placeholder="#3b82f6"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="cg-sort">{{ 'catalog.form.sortOrder' | transloco }}</label>
+      <p-inputnumber inputId="cg-sort" formControlName="sortOrder" [min]="0" [fluid]="true" />
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="categoryDialogVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        [loading]="categorySaving()"
+        data-testid="category-save-btn"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Tedavi dialogu -->
+<p-dialog
+  [visible]="defDialogVisible()"
+  (visibleChange)="defDialogVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '34rem' }"
+  [header]="(editingDef ? 'catalog.editTreatment' : 'catalog.newTreatment') | transloco"
+>
+  <form [formGroup]="defForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveDef()">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-code">{{ 'catalog.columns.code' | transloco }} *</label>
+        <input id="df-code" pInputText formControlName="code" data-testid="treatment-code-input" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-category">{{ 'catalog.columns.category' | transloco }} *</label>
+        <p-select
+          inputId="df-category"
+          formControlName="categoryId"
+          [options]="categories()"
+          optionValue="id"
+          optionLabel="name"
+          [fluid]="true"
+          appendTo="body"
+        >
+          <ng-template #selectedItem let-cat>
+            @if (cat) {
+              <span class="cat__opt">
+                <span class="cat__dot" [style.background]="cat.colorHex ?? '#94a3b8'"></span>
+                {{ cat.name }}
+              </span>
+            }
+          </ng-template>
+          <ng-template #item let-cat>
+            <span class="cat__opt">
+              <span class="cat__dot" [style.background]="cat.colorHex ?? '#94a3b8'"></span>
+              {{ cat.name }}
+            </span>
+          </ng-template>
+        </p-select>
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="df-name">{{ 'catalog.form.nameTr' | transloco }} *</label>
+      <input id="df-name" pInputText formControlName="name" data-testid="treatment-name-input" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="df-nameEn">{{ 'catalog.form.nameEn' | transloco }}</label>
+      <input id="df-nameEn" pInputText formControlName="nameEn" />
+    </div>
+    <div class="grid grid-cols-3 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-price">{{ 'catalog.columns.defaultPrice' | transloco }} *</label>
+        <p-inputnumber
+          inputId="df-price"
+          formControlName="defaultPrice"
+          mode="decimal"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          locale="tr-TR"
+          suffix=" ₺"
+          [min]="0"
+          [fluid]="true"
+          data-testid="treatment-price-input"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-vat">{{ 'catalog.columns.vat' | transloco }}</label>
+        <p-inputnumber inputId="df-vat" formControlName="vatRate" [min]="0" [max]="100" suffix=" %" [fluid]="true" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-duration">{{ 'catalog.columns.duration' | transloco }}</label>
+        <p-inputnumber inputId="df-duration" formControlName="defaultDurationMinutes" [min]="0" suffix=" dk" [fluid]="true" />
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-scope">{{ 'catalog.columns.scope' | transloco }}</label>
+        <p-select
+          inputId="df-scope"
+          formControlName="toothScope"
+          [options]="scopeOptions()"
+          optionValue="value"
+          optionLabel="label"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="df-effect">{{ 'catalog.form.effect' | transloco }}</label>
+        <p-select
+          inputId="df-effect"
+          formControlName="toothStatusEffect"
+          [options]="effectOptions()"
+          optionValue="value"
+          optionLabel="label"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="df-sut">{{ 'catalog.form.sutCode' | transloco }}</label>
+      <input id="df-sut" pInputText formControlName="sutCode" />
+    </div>
+    <div class="flex items-center gap-5 pt-1">
+      <label class="flex items-center gap-2 text-sm">
+        <p-checkbox formControlName="requiresSurface" [binary]="true" inputId="df-surface" />
+        {{ 'catalog.columns.surfaceLong' | transloco }}
+      </label>
+      <label class="flex items-center gap-2 text-sm">
+        <p-checkbox formControlName="isActive" [binary]="true" inputId="df-active" />
+        {{ 'catalog.columns.active' | transloco }}
+      </label>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="defDialogVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        [loading]="defSaving()"
+        data-testid="treatment-save-btn"
+      />
+    </div>
+  </form>
+</p-dialog>

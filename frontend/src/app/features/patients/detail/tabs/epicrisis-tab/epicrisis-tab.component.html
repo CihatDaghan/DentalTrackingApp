@@ -1,0 +1,289 @@
+<div class="dt-card p-5 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h3 class="m-0 text-base font-semibold text-slate-700">{{ 'epicrisis.title' | transloco }}</h3>
+    <p-button
+      [label]="'epicrisis.new' | transloco"
+      icon="fa-solid fa-file-medical"
+      size="small"
+      data-testid="new-epicrisis-btn"
+      (onClick)="openNew()"
+      *hasPermission="'epicrisis.create'"
+    />
+  </div>
+
+  @if (loading()) {
+    <div class="py-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+  } @else if (items().length === 0) {
+    <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+      <i class="fa-solid fa-file-medical text-2xl" aria-hidden="true"></i>
+      <span>{{ 'epicrisis.empty' | transloco }}</span>
+    </div>
+  } @else {
+    <p-table [value]="items()" [rowHover]="true" dataKey="id" data-testid="epicrisis-table">
+      <ng-template #header>
+        <tr>
+          <th style="width: 3rem"></th>
+          <th style="width: 11rem">{{ 'epicrisis.col.date' | transloco }}</th>
+          <th>{{ 'epicrisis.col.epicrisisTitle' | transloco }}</th>
+          <th style="width: 12rem">{{ 'epicrisis.col.doctor' | transloco }}</th>
+          <th style="width: 8rem">{{ 'epicrisis.col.diagnoses' | transloco }}</th>
+          <th style="width: 6rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row let-expanded="expanded">
+        <tr [attr.data-testid]="'epicrisis-row-' + row.id">
+          <td>
+            <p-button
+              type="button"
+              [icon]="expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right'"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pRowToggler]="row"
+              [attr.data-testid]="'epicrisis-expand-' + row.id"
+            />
+          </td>
+          <td>{{ row.createdAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}</td>
+          <td class="font-medium text-slate-700">{{ row.title }}</td>
+          <td>{{ row.doctorName }}</td>
+          <td>{{ row.diagnoses.length }}</td>
+          <td class="text-right">
+            <p-button
+              icon="fa-solid fa-file-pdf"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'epicrisis.downloadPdf' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'epicrisis-pdf-' + row.id"
+              (onClick)="downloadPdf(row)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #expandedrow let-row>
+        <tr>
+          <td colspan="6" class="bg-slate-50">
+            <div class="flex flex-col gap-2 py-2 pl-2 text-sm">
+              @if (row.diagnoses.length > 0) {
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-xs font-semibold text-slate-500">
+                    {{ 'epicrisis.col.diagnoses' | transloco }}:
+                  </span>
+                  @for (d of row.diagnoses; track d.code) {
+                    <span
+                      class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700"
+                    >
+                      {{ d.code }} — {{ d.name }}
+                    </span>
+                  }
+                </div>
+              }
+              @if (row.treatments.length > 0) {
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-xs font-semibold text-slate-500">
+                    {{ 'epicrisis.form.treatments' | transloco }}:
+                  </span>
+                  <ul class="m-0 list-none pl-0">
+                    @for (t of row.treatments; track t.id) {
+                      <li class="text-xs text-slate-600">
+                        {{ t.date | trDate: 'dd.MM.yyyy' }}
+                        @if (t.toothNumber) {
+                          · {{ 'epicrisis.tooth' | transloco }} {{ t.toothNumber }}
+                        }
+                        · {{ t.name }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (row.bodyText) {
+                <p class="m-0 whitespace-pre-wrap text-slate-600">{{ row.bodyText }}</p>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</div>
+
+<!-- ============ Yeni epikriz dialogu ============ -->
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '58rem', maxWidth: '95vw' }"
+  [header]="'epicrisis.newTitle' | transloco"
+>
+  <div class="flex flex-col gap-4 pt-1" data-testid="epicrisis-dialog">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_16rem]">
+      <div class="flex flex-col gap-1">
+        <label for="ep-title" class="text-sm font-medium">
+          {{ 'epicrisis.form.epicrisisTitle' | transloco }} *
+        </label>
+        <input
+          id="ep-title"
+          pInputText
+          class="w-full"
+          [ngModel]="title()"
+          (ngModelChange)="title.set($event)"
+          [placeholder]="'epicrisis.form.titlePlaceholder' | transloco"
+          data-testid="ep-title"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="ep-doctor" class="text-sm font-medium">
+          {{ 'epicrisis.form.doctor' | transloco }} *
+        </label>
+        <p-select
+          inputId="ep-doctor"
+          [options]="doctorOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="doctorId()"
+          (ngModelChange)="doctorId.set($event)"
+          [disabled]="doctorLocked()"
+          [fluid]="true"
+          appendTo="body"
+          data-testid="ep-doctor"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="ep-icd" class="text-sm font-medium">
+        {{ 'epicrisis.form.diagnoses' | transloco }}
+      </label>
+      <p-autocomplete
+        inputId="ep-icd"
+        [ngModel]="diagnoses()"
+        (ngModelChange)="onDiagnosesChange($event)"
+        [suggestions]="icdSuggestions()"
+        (completeMethod)="searchIcd($event)"
+        [multiple]="true"
+        [minLength]="2"
+        [delay]="300"
+        optionLabel="label"
+        [forceSelection]="true"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'epicrisis.form.icdPlaceholder' | transloco"
+        data-testid="ep-icd"
+      >
+        <ng-template #item let-code>
+          <div class="flex w-full items-center gap-2">
+            <span class="font-mono text-xs font-semibold text-blue-700">{{ code.code }}</span>
+            <span class="text-sm">{{ code.name }}</span>
+          </div>
+        </ng-template>
+        <ng-template #empty>
+          <div class="px-3 py-2 text-sm text-slate-400">
+            {{ 'epicrisis.form.noIcd' | transloco }}
+          </div>
+        </ng-template>
+      </p-autocomplete>
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-sm font-medium">{{ 'epicrisis.form.treatments' | transloco }}</span>
+        @if (doneTreatments().length > 0) {
+          <label class="flex cursor-pointer items-center gap-2 text-xs text-slate-500">
+            <p-checkbox
+              [ngModel]="selectedTreatmentIds().length === doneTreatments().length"
+              (ngModelChange)="toggleAllTreatments($event)"
+              [binary]="true"
+              inputId="ep-select-all"
+              data-testid="ep-select-all-treatments"
+            />
+            {{ 'epicrisis.form.selectAll' | transloco }}
+          </label>
+        }
+      </div>
+      @if (doneTreatments().length === 0) {
+        <p
+          class="m-0 rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400"
+        >
+          {{ 'epicrisis.form.noTreatments' | transloco }}
+        </p>
+      } @else {
+        <div
+          class="flex max-h-56 flex-col divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200"
+        >
+          @for (t of doneTreatments(); track t.id) {
+            <label
+              class="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-slate-50"
+              [attr.data-testid]="'ep-treatment-' + t.id"
+            >
+              <p-checkbox
+                [ngModel]="isTreatmentSelected(t.id)"
+                (ngModelChange)="toggleTreatment(t.id, $event)"
+                [binary]="true"
+                [inputId]="'ep-treatment-cb-' + t.id"
+              />
+              <span class="w-24 shrink-0 text-xs text-slate-500">
+                {{ t.performedAtUtc ?? t.createdAtUtc | trDate: 'dd.MM.yyyy' }}
+              </span>
+              <span class="w-16 shrink-0 text-xs font-semibold text-slate-600">
+                @if (t.toothNumber) {
+                  {{ t.toothNumber }}
+                } @else {
+                  —
+                }
+              </span>
+              <span class="flex-1 text-slate-700">{{ t.treatmentName }}</span>
+              <span class="shrink-0 text-xs text-slate-400">{{ t.doctorName }}</span>
+            </label>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="ep-body" class="text-sm font-medium">
+        {{ 'epicrisis.form.bodyText' | transloco }}
+      </label>
+      <textarea
+        id="ep-body"
+        pTextarea
+        rows="5"
+        class="w-full"
+        [ngModel]="bodyText()"
+        (ngModelChange)="bodyText.set($event)"
+        [placeholder]="'epicrisis.form.bodyPlaceholder' | transloco"
+        data-testid="ep-body"
+      ></textarea>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
+      <label class="flex cursor-pointer items-center gap-2 text-sm">
+        <p-checkbox
+          [ngModel]="openPdfAfterSave()"
+          (ngModelChange)="openPdfAfterSave.set($event)"
+          [binary]="true"
+          inputId="ep-open-pdf"
+          data-testid="ep-open-pdf"
+        />
+        {{ 'epicrisis.form.openPdfAfterSave' | transloco }}
+      </label>
+      <div class="flex gap-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="dialogVisible.set(false)"
+        />
+        <p-button
+          [label]="'common.save' | transloco"
+          icon="fa-solid fa-check"
+          [disabled]="!canSave()"
+          [loading]="saving()"
+          data-testid="ep-save"
+          (onClick)="save()"
+        />
+      </div>
+    </div>
+  </div>
+</p-dialog>

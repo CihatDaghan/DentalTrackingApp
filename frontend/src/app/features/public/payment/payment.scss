@@ -1,0 +1,226 @@
+// Mobile-first public odeme sayfalari (/p/payment/:token ve .../result)
+.pay-page {
+  min-height: 100vh;
+  background: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.pay-page__card {
+  width: 100%;
+  max-width: 480px;
+  align-self: flex-start;
+  margin-top: 2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pay-page__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  i {
+    font-size: 1.5rem;
+    color: #3b82f6;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  span {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+}
+
+.pay-page__amount-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 1rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+  border: 1px solid #dbeafe;
+  text-align: center;
+}
+
+.pay-page__amount-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pay-page__amount {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #1d4ed8;
+}
+
+.pay-page__description {
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.pay-page__secure {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+
+  i {
+    margin-top: 0.15rem;
+    color: #16a34a;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.85rem;
+    color: #15803d;
+  }
+
+  p {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #166534;
+  }
+}
+
+.pay-page__note {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pay-page__link {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #3b82f6;
+  text-decoration: underline;
+
+  &:hover {
+    color: #1d4ed8;
+  }
+}
+
+// --- Durum ekranlari (basari / bekliyor / hata / gecersiz token) -------------
+
+.pay-page__status {
+  align-self: center;
+  margin-top: 12vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  color: #64748b;
+  max-width: 440px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.pay-page__status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 1.75rem;
+
+  &--success {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  &--warn {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  &--error {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  &--pending {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+}
+
+// Makbuz ozeti
+.pay-page__receipt {
+  width: 100%;
+  max-width: 380px;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  text-align: left;
+}
+
+.pay-page__receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+
+  dt {
+    color: #64748b;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.pay-page__progress {
+  width: 100%;
+  max-width: 260px;
+  height: 4px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.pay-page__progress-bar {
+  height: 100%;
+  background: #3b82f6;
+  transition: width 0.4s linear;
+}

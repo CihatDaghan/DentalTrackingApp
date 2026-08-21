@@ -1,0 +1,341 @@
+<div class="flex flex-col gap-4" data-testid="patient-reports-tab">
+  <!-- 1) Tedavi raporu -->
+  <div class="dt-card p-4 flex flex-col gap-3" data-testid="treatment-report-section">
+    <div class="flex items-end justify-between gap-3 flex-wrap">
+      <h3 class="m-0 text-base font-semibold text-slate-800">
+        <i class="fa-solid fa-list-check mr-2 text-blue-500" aria-hidden="true"></i>
+        {{ 'patientReports.treatment.title' | transloco }}
+      </h3>
+      <div class="flex items-end gap-2 flex-wrap">
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+            {{ 'reports.filter.from' | transloco }}
+          </span>
+          <p-datepicker
+            [ngModel]="from()"
+            (ngModelChange)="from.set($event); loadTreatmentReport()"
+            dateFormat="dd.mm.yy"
+            [showIcon]="true"
+            appendTo="body"
+            size="small"
+            data-testid="patient-report-from"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+            {{ 'reports.filter.to' | transloco }}
+          </span>
+          <p-datepicker
+            [ngModel]="to()"
+            (ngModelChange)="to.set($event); loadTreatmentReport()"
+            dateFormat="dd.mm.yy"
+            [showIcon]="true"
+            appendTo="body"
+            size="small"
+            data-testid="patient-report-to"
+          />
+        </label>
+        <p-button
+          [label]="'patientReports.downloadPdf' | transloco"
+          icon="fa-solid fa-file-pdf"
+          size="small"
+          severity="danger"
+          [outlined]="true"
+          [loading]="treatmentPdfLoading()"
+          (onClick)="downloadTreatmentPdf()"
+          data-testid="treatment-report-pdf"
+        />
+      </div>
+    </div>
+
+    @if (treatmentLoading()) {
+      <p class="text-slate-400 text-sm py-6 text-center">{{ 'common.loading' | transloco }}</p>
+    } @else if (treatmentReport(); as report) {
+      <p-table [value]="report.rows" styleClass="p-datatable-sm">
+        <ng-template #header>
+          <tr>
+            <th>{{ 'patientReports.treatment.date' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.doctor' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.tooth' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.name' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.status' | transloco }}</th>
+            <th class="text-right!">{{ 'patientReports.treatment.price' | transloco }}</th>
+            <th class="text-right!">{{ 'patientReports.treatment.discount' | transloco }}</th>
+            <th class="text-right!">{{ 'patientReports.treatment.net' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td class="text-slate-500">{{ row.date | trDate }}</td>
+            <td>{{ row.doctorName }}</td>
+            <td class="text-slate-500">{{ row.toothNumber || '—' }}</td>
+            <td class="font-medium text-slate-700">{{ row.treatmentName }}</td>
+            <td><app-status-tag kind="treatment" [value]="row.status" /></td>
+            <td class="text-right!">{{ row.price | money }}</td>
+            <td class="text-right! text-amber-600">{{ row.discountAmount | money }}</td>
+            <td class="text-right! font-medium">{{ row.netAmount | money }}</td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="8" class="text-center text-slate-400 py-6">
+              {{ 'table.empty' | transloco }}
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #footer>
+          <tr>
+            <td colspan="5" class="text-right! font-semibold text-slate-600">
+              {{ 'patientReports.treatment.total' | transloco }}
+            </td>
+            <td class="text-right! font-semibold">{{ report.totalGross | money }}</td>
+            <td class="text-right! font-semibold text-amber-600">
+              {{ report.totalDiscount | money }}
+            </td>
+            <td class="text-right! font-semibold text-blue-700" data-testid="treatment-report-total">
+              {{ report.totalNet | money }}
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+
+  <!-- 2) Durum bildirir rapor -->
+  <div class="dt-card p-4 flex items-center justify-between gap-3 flex-wrap" data-testid="status-report-section">
+    <div class="flex flex-col">
+      <h3 class="m-0 text-base font-semibold text-slate-800">
+        <i class="fa-solid fa-file-medical mr-2 text-emerald-500" aria-hidden="true"></i>
+        {{ 'patientReports.status.title' | transloco }}
+      </h3>
+      <span class="text-xs text-slate-500">{{ 'patientReports.status.hint' | transloco }}</span>
+    </div>
+    <p-button
+      [label]="'patientReports.downloadPdf' | transloco"
+      icon="fa-solid fa-file-pdf"
+      size="small"
+      severity="danger"
+      [outlined]="true"
+      [loading]="statusPdfLoading()"
+      (onClick)="downloadStatusPdf()"
+      data-testid="status-report-pdf"
+    />
+  </div>
+
+  <!-- 3) Proforma (fiyat teklifi) -->
+  <div class="dt-card p-4 flex flex-col gap-3" data-testid="proforma-section">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex flex-col">
+        <h3 class="m-0 text-base font-semibold text-slate-800">
+          <i class="fa-solid fa-file-invoice-dollar mr-2 text-violet-500" aria-hidden="true"></i>
+          {{ 'patientReports.proforma.title' | transloco }}
+        </h3>
+        <span class="text-xs text-slate-500">{{ 'patientReports.proforma.hint' | transloco }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <p-button
+          [label]="'patientReports.proforma.preview' | transloco"
+          icon="fa-solid fa-eye"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="selectedIds().length === 0"
+          [loading]="proformaLoading()"
+          (onClick)="previewProforma()"
+          data-testid="proforma-preview"
+        />
+        <p-button
+          [label]="'patientReports.proforma.pdf' | transloco"
+          icon="fa-solid fa-file-pdf"
+          size="small"
+          severity="danger"
+          [outlined]="true"
+          [loading]="proformaLoading()"
+          (onClick)="downloadProformaPdf()"
+          data-testid="proforma-pdf"
+        />
+      </div>
+    </div>
+
+    @if (planned().length === 0) {
+      <p class="text-slate-400 text-sm py-4 text-center">
+        {{ 'patientReports.proforma.noPlanned' | transloco }}
+      </p>
+    } @else {
+      <p-table [value]="planned()" styleClass="p-datatable-sm" dataKey="id">
+        <ng-template #header>
+          <tr>
+            <th style="width: 3rem">
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="selectedIds().length === planned().length"
+                (ngModelChange)="toggleAll($event)"
+                data-testid="proforma-select-all"
+              />
+            </th>
+            <th>{{ 'patientReports.treatment.tooth' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.name' | transloco }}</th>
+            <th>{{ 'patientReports.treatment.doctor' | transloco }}</th>
+            <th class="text-right!">{{ 'patientReports.treatment.price' | transloco }}</th>
+            <th class="text-right!">{{ 'patientReports.treatment.discount' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="isSelected(row.id)"
+                (ngModelChange)="toggleTreatment(row.id, $event)"
+                [attr.data-testid]="'proforma-check-' + row.id"
+              />
+            </td>
+            <td class="text-slate-500">{{ row.toothNumber || '—' }}</td>
+            <td class="font-medium text-slate-700">{{ row.treatmentName }}</td>
+            <td class="text-slate-500">{{ row.doctorName }}</td>
+            <td class="text-right!">{{ row.price | money }}</td>
+            <td class="text-right! text-amber-600">{{ row.discountAmount | money }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+            {{ 'patientReports.proforma.validUntil' | transloco }}
+          </span>
+          <p-datepicker
+            [ngModel]="proformaValidUntil()"
+            (ngModelChange)="proformaValidUntil.set($event)"
+            dateFormat="dd.mm.yy"
+            [showIcon]="true"
+            appendTo="body"
+            size="small"
+          />
+        </label>
+        <label class="flex flex-col gap-1 md:col-span-2">
+          <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+            {{ 'patientReports.proforma.note' | transloco }}
+          </span>
+          <textarea
+            pTextarea
+            rows="2"
+            [ngModel]="proformaNote()"
+            (ngModelChange)="proformaNote.set($event)"
+            data-testid="proforma-note"
+          ></textarea>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-end gap-4 border-t border-slate-100 pt-3">
+        <span class="text-sm text-slate-500">
+          {{ 'patientReports.proforma.selected' | transloco: { count: selectedIds().length } }}
+        </span>
+        <span class="text-lg font-semibold text-slate-800" data-testid="proforma-total">
+          {{ selectedTotal() | money }}
+        </span>
+      </div>
+
+      @if (proformaPreview(); as p) {
+        <div class="rounded-lg border border-violet-200 bg-violet-50 p-3 flex flex-col gap-2" data-testid="proforma-preview-box">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+            <div class="flex flex-col">
+              <span class="text-[11px] uppercase text-violet-600">
+                {{ 'patientReports.proforma.subTotal' | transloco }}
+              </span>
+              <b>{{ p.subTotal | money }}</b>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[11px] uppercase text-violet-600">
+                {{ 'patientReports.proforma.discountTotal' | transloco }}
+              </span>
+              <b>{{ p.discountTotal | money }}</b>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[11px] uppercase text-violet-600">
+                {{ 'patientReports.proforma.vatTotal' | transloco }}
+              </span>
+              <b>{{ p.vatTotal | money }}</b>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[11px] uppercase text-violet-600">
+                {{ 'patientReports.proforma.grandTotal' | transloco }}
+              </span>
+              <b class="text-violet-800">{{ p.grandTotal | money }}</b>
+            </div>
+          </div>
+          <span class="text-[11px] text-violet-700">{{ p.disclaimer }}</span>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- 4) Belge arsivi -->
+  <div class="dt-card p-4 flex flex-col gap-3" data-testid="report-archive-section">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h3 class="m-0 text-base font-semibold text-slate-800">
+        <i class="fa-regular fa-folder-open mr-2 text-slate-500" aria-hidden="true"></i>
+        {{ 'patientReports.archive.title' | transloco }}
+      </h3>
+      <p-select
+        [options]="archiveOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="archiveCategory()"
+        (ngModelChange)="onArchiveCategoryChange($event)"
+        size="small"
+        appendTo="body"
+        data-testid="archive-category"
+      />
+    </div>
+
+    @if (archiveLoading()) {
+      <p class="text-slate-400 text-sm py-4 text-center">{{ 'common.loading' | transloco }}</p>
+    } @else {
+      <p-table [value]="archive()" styleClass="p-datatable-sm" dataKey="id">
+        <ng-template #header>
+          <tr>
+            <th>{{ 'patientReports.archive.file' | transloco }}</th>
+            <th>{{ 'patientReports.archive.category' | transloco }}</th>
+            <th>{{ 'patientReports.archive.createdAt' | transloco }}</th>
+            <th style="width: 6rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr [attr.data-testid]="'archive-row-' + row.id">
+            <td class="font-medium text-slate-700">
+              <i class="fa-solid fa-file-pdf mr-2 text-rose-500" aria-hidden="true"></i>
+              {{ row.fileName }}
+            </td>
+            <td class="text-slate-500">{{ categoryKey(row.category) | transloco }}</td>
+            <td class="text-slate-500 text-xs">{{ row.createdAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}</td>
+            <td class="text-right! whitespace-nowrap">
+              <p-button
+                [text]="true"
+                size="small"
+                severity="secondary"
+                icon="fa-solid fa-eye"
+                (onClick)="openArchiveFile(row)"
+              />
+              <p-button
+                [text]="true"
+                size="small"
+                severity="secondary"
+                icon="fa-solid fa-download"
+                (onClick)="downloadArchiveFile(row)"
+                [attr.data-testid]="'archive-download-' + row.id"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4" class="text-center text-slate-400 py-6">
+              {{ 'table.empty' | transloco }}
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+</div>

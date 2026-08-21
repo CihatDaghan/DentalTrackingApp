@@ -1,0 +1,156 @@
+/* Gecikmis vaka satiri — hover'da da kirmizi kalir. */
+:host ::ng-deep tr.lab-row--overdue > td {
+  background: #fef2f2;
+}
+
+.lab-kanban {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(200px, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+@media (max-width: 1400px) {
+  .lab-kanban {
+    grid-template-columns: repeat(6, minmax(190px, 1fr));
+    min-width: 1180px;
+  }
+}
+
+.lab-kanban__col {
+  display: flex;
+  flex-direction: column;
+  min-height: 12rem;
+  padding: 0.65rem;
+  background: #f8fafc;
+}
+
+.lab-kanban__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.6rem;
+}
+
+.lab-kanban__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.lab-kanban__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 6rem;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+/* Surukleme sirasinda hedef kolonu belirginlestir. */
+.lab-kanban__body.cdk-drop-list-dragging,
+.lab-kanban__body.cdk-drop-list-receiving {
+  background: #eff6ff;
+  outline: 2px dashed #93c5fd;
+  outline-offset: 2px;
+}
+
+.lab-kanban__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  cursor: grab;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &--overdue {
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+}
+
+.lab-kanban__card.cdk-drag-preview {
+  cursor: grabbing;
+  box-shadow:
+    0 10px 25px rgba(15, 23, 42, 0.18),
+    0 3px 8px rgba(15, 23, 42, 0.1);
+}
+
+.lab-kanban__card.cdk-drag-placeholder {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
+.lab-kanban__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.lab-kanban__case-no {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #94a3b8;
+}
+
+.lab-kanban__patient {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.lab-kanban__work {
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.lab-kanban__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.lab-kanban__empty {
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+/* Surukleme animasyonu */
+.cdk-drag-animating {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}

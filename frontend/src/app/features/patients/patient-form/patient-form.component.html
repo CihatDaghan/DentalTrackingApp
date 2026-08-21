@@ -1,0 +1,219 @@
+<form [formGroup]="form" class="flex flex-col gap-5">
+  <!-- Kimlik -->
+  <section class="flex flex-col gap-3">
+    <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      {{ 'patients.form.sectionIdentity' | transloco }}
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="pf-firstname" class="text-sm font-medium">
+          {{ 'patients.form.firstName' | transloco }} *
+        </label>
+        <input id="pf-firstname" pInputText formControlName="firstName" class="w-full" />
+        @if (form.controls.firstName.touched && form.controls.firstName.invalid) {
+          <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+        }
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-lastname" class="text-sm font-medium">
+          {{ 'patients.form.lastName' | transloco }} *
+        </label>
+        <input id="pf-lastname" pInputText formControlName="lastName" class="w-full" />
+        @if (form.controls.lastName.touched && form.controls.lastName.invalid) {
+          <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1 md:col-span-2">
+        <span class="text-sm font-medium">{{ 'patients.form.identityType' | transloco }}</span>
+        <p-selectbutton
+          formControlName="identityType"
+          [options]="identityOptions"
+          optionValue="value"
+          [allowEmpty]="false"
+        >
+          <ng-template #item let-option>{{ option.labelKey | transloco }}</ng-template>
+        </p-selectbutton>
+      </div>
+
+      @if (identityTypeValue() === IdentityType.Tckn) {
+        <div class="flex flex-col gap-1">
+          <label for="pf-tckn" class="text-sm font-medium">
+            {{ 'patients.form.tckn' | transloco }}
+          </label>
+          <app-tckn-input inputId="pf-tckn" formControlName="tckn" />
+          @if (form.controls.tckn.touched && form.controls.tckn.hasError('tckn')) {
+            <small class="text-red-600">{{ 'validation.tcknInvalid' | transloco }}</small>
+          }
+        </div>
+      } @else {
+        <div class="flex flex-col gap-1">
+          <label for="pf-passport" class="text-sm font-medium">
+            {{ 'patients.form.passportNo' | transloco }} *
+          </label>
+          <input id="pf-passport" pInputText formControlName="passportNo" class="w-full" />
+          @if (form.controls.passportNo.touched && form.controls.passportNo.invalid) {
+            <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="pf-nationality" class="text-sm font-medium">
+            {{ 'patients.form.nationality' | transloco }} *
+          </label>
+          <p-select
+            inputId="pf-nationality"
+            formControlName="nationalityCode"
+            [options]="nationalityOptions"
+            optionLabel="code"
+            optionValue="code"
+            [editable]="true"
+            [filter]="true"
+            [fluid]="true"
+          />
+          @if (form.controls.nationalityCode.touched && form.controls.nationalityCode.invalid) {
+            <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="pf-lastentry" class="text-sm font-medium">
+            {{ 'patients.form.lastEntryDate' | transloco }} *
+          </label>
+          <p-datepicker
+            inputId="pf-lastentry"
+            formControlName="lastEntryDate"
+            dateFormat="dd.mm.yy"
+            [maxDate]="maxDate"
+            [showIcon]="true"
+            [fluid]="true"
+          />
+          @if (form.controls.lastEntryDate.touched && form.controls.lastEntryDate.invalid) {
+            <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+          }
+        </div>
+      }
+
+      <div class="flex flex-col gap-1">
+        <label for="pf-birthdate" class="text-sm font-medium">
+          {{ 'patients.form.birthDate' | transloco }}
+        </label>
+        <p-datepicker
+          inputId="pf-birthdate"
+          formControlName="birthDate"
+          dateFormat="dd.mm.yy"
+          [maxDate]="maxDate"
+          [showIcon]="true"
+          [fluid]="true"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-gender" class="text-sm font-medium">
+          {{ 'patients.form.gender' | transloco }}
+        </label>
+        <p-select
+          inputId="pf-gender"
+          formControlName="gender"
+          [options]="genderOptions"
+          optionValue="value"
+          [fluid]="true"
+        >
+          <ng-template #selectedItem let-option>
+            @if (option) {
+              {{ option.labelKey | transloco }}
+            }
+          </ng-template>
+          <ng-template #item let-option>{{ option.labelKey | transloco }}</ng-template>
+        </p-select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Iletisim -->
+  <section class="flex flex-col gap-3">
+    <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      {{ 'patients.form.sectionContact' | transloco }}
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="pf-phone" class="text-sm font-medium">
+          {{ 'patients.form.phone' | transloco }}
+        </label>
+        <app-phone-input inputId="pf-phone" formControlName="phone" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-phone2" class="text-sm font-medium">
+          {{ 'patients.form.phone2' | transloco }}
+        </label>
+        <app-phone-input inputId="pf-phone2" formControlName="phone2" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-email" class="text-sm font-medium">
+          {{ 'patients.form.email' | transloco }}
+        </label>
+        <input id="pf-email" pInputText type="email" formControlName="email" class="w-full" />
+        @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+          <small class="text-red-600">{{ 'validation.email' | transloco }}</small>
+        }
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-city" class="text-sm font-medium">
+          {{ 'patients.form.city' | transloco }}
+        </label>
+        <input id="pf-city" pInputText formControlName="city" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-district" class="text-sm font-medium">
+          {{ 'patients.form.district' | transloco }}
+        </label>
+        <input id="pf-district" pInputText formControlName="district" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1 md:col-span-2">
+        <label for="pf-address" class="text-sm font-medium">
+          {{ 'patients.form.address' | transloco }}
+        </label>
+        <textarea id="pf-address" pTextarea formControlName="address" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diger -->
+  <section class="flex flex-col gap-3">
+    <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      {{ 'patients.form.sectionOther' | transloco }}
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="pf-referral" class="text-sm font-medium">
+          {{ 'patients.form.referralSource' | transloco }}
+        </label>
+        <input id="pf-referral" pInputText formControlName="referralSource" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pf-profession" class="text-sm font-medium">
+          {{ 'patients.form.profession' | transloco }}
+        </label>
+        <input id="pf-profession" pInputText formControlName="profession" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1 md:col-span-2">
+        <label for="pf-note" class="text-sm font-medium">
+          {{ 'patients.form.generalNote' | transloco }}
+        </label>
+        <textarea id="pf-note" pTextarea formControlName="generalNote" rows="2" class="w-full"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- KVKK iletisim izinleri -->
+  <section class="flex flex-col gap-3">
+    <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      {{ 'patients.form.sectionConsents' | transloco }}
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+      @for (row of consentRows; track row.control) {
+        <label class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
+          <span class="text-sm">{{ row.labelKey | transloco }}</span>
+          <p-toggleswitch [formControlName]="row.control" />
+        </label>
+      }
+    </div>
+  </section>
+</form>

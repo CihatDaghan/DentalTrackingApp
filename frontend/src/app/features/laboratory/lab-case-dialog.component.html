@@ -1,0 +1,219 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '46rem', maxWidth: '95vw' }"
+  [header]="(editing() ? 'laboratory.editCase' : 'laboratory.newCase') | transloco"
+>
+  <div class="grid grid-cols-1 gap-3 pt-1 md:grid-cols-2" data-testid="lab-case-dialog">
+    @if (patientId() === null) {
+      <div class="flex flex-col gap-1 md:col-span-2">
+        <label for="lab-patient" class="text-sm font-medium">
+          {{ 'laboratory.form.patient' | transloco }} *
+        </label>
+        <app-patient-search-select
+          inputId="lab-patient"
+          [ngModel]="patient()"
+          (ngModelChange)="patient.set($event)"
+          data-testid="lab-patient"
+        />
+      </div>
+    }
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-laboratory" class="text-sm font-medium">
+        {{ 'laboratory.form.laboratory' | transloco }} *
+      </label>
+      <p-select
+        inputId="lab-laboratory"
+        [options]="laboratoryOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="laboratoryId()"
+        (ngModelChange)="laboratoryId.set($event)"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'laboratory.form.laboratoryPlaceholder' | transloco"
+        data-testid="lab-laboratory"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-doctor" class="text-sm font-medium">
+        {{ 'laboratory.form.doctor' | transloco }} *
+      </label>
+      <p-select
+        inputId="lab-doctor"
+        [options]="doctorOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="doctorId()"
+        (ngModelChange)="doctorId.set($event)"
+        [disabled]="doctorLocked()"
+        [fluid]="true"
+        appendTo="body"
+        data-testid="lab-doctor"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-worktype" class="text-sm font-medium">
+        {{ 'laboratory.form.workType' | transloco }} *
+      </label>
+      <p-select
+        inputId="lab-worktype"
+        [options]="workTypeOptions()"
+        [editable]="true"
+        [ngModel]="workType()"
+        (ngModelChange)="workType.set($event ?? '')"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'laboratory.form.workTypePlaceholder' | transloco"
+        data-testid="lab-worktype"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-material" class="text-sm font-medium">
+        {{ 'laboratory.form.material' | transloco }}
+      </label>
+      <p-select
+        inputId="lab-material"
+        [options]="materialOptions()"
+        [editable]="true"
+        [ngModel]="material()"
+        (ngModelChange)="material.set($event)"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'laboratory.form.materialPlaceholder' | transloco"
+        data-testid="lab-material"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-teeth" class="text-sm font-medium">
+        {{ 'laboratory.form.teeth' | transloco }}
+      </label>
+      <input
+        id="lab-teeth"
+        pInputText
+        class="w-full"
+        [ngModel]="teethText()"
+        (ngModelChange)="teethText.set($event)"
+        [placeholder]="'laboratory.form.teethPlaceholder' | transloco"
+        data-testid="lab-teeth"
+      />
+      @if (teeth().length > 0) {
+        <div class="flex flex-wrap gap-1 pt-1" data-testid="lab-teeth-chips">
+          @for (tooth of teeth(); track $index) {
+            <span
+              class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700"
+            >
+              {{ tooth }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-shade" class="text-sm font-medium">
+        {{ 'laboratory.form.shade' | transloco }}
+      </label>
+      <p-select
+        inputId="lab-shade"
+        [options]="shades"
+        [ngModel]="shade()"
+        (ngModelChange)="shade.set($event)"
+        [showClear]="true"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'laboratory.form.shadePlaceholder' | transloco"
+        data-testid="lab-shade"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-sent" class="text-sm font-medium">
+        {{ 'laboratory.form.sentDate' | transloco }}
+      </label>
+      <p-datepicker
+        inputId="lab-sent"
+        [ngModel]="sentDate()"
+        (ngModelChange)="sentDate.set($event)"
+        dateFormat="dd.mm.yy"
+        [showIcon]="true"
+        [fluid]="true"
+        appendTo="body"
+        data-testid="lab-sent-date"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-due" class="text-sm font-medium">
+        {{ 'laboratory.form.dueDate' | transloco }}
+      </label>
+      <p-datepicker
+        inputId="lab-due"
+        [ngModel]="dueDate()"
+        (ngModelChange)="dueDate.set($event)"
+        dateFormat="dd.mm.yy"
+        [showIcon]="true"
+        [fluid]="true"
+        appendTo="body"
+        data-testid="lab-due-date"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="lab-price" class="text-sm font-medium">
+        {{ 'laboratory.form.price' | transloco }}
+      </label>
+      <p-inputnumber
+        inputId="lab-price"
+        [ngModel]="price()"
+        (ngModelChange)="price.set($event)"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="2"
+        [min]="0"
+        suffix=" ₺"
+        [fluid]="true"
+        data-testid="lab-price"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1 md:col-span-2">
+      <label for="lab-note" class="text-sm font-medium">
+        {{ 'laboratory.form.note' | transloco }}
+      </label>
+      <textarea
+        id="lab-note"
+        pTextarea
+        rows="3"
+        class="w-full"
+        [ngModel]="note()"
+        (ngModelChange)="note.set($event)"
+        data-testid="lab-note"
+      ></textarea>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2 md:col-span-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="close()"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        icon="fa-solid fa-check"
+        [disabled]="!canSave()"
+        [loading]="saving()"
+        data-testid="lab-case-save"
+        (onClick)="save()"
+      />
+    </div>
+  </div>
+</p-dialog>

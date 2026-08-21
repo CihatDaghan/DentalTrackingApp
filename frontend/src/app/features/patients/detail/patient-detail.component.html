@@ -1,0 +1,111 @@
+@if (store.patient(); as patient) {
+  <div class="patient-detail">
+    <!-- Baslik seridi -->
+    <div class="patient-detail__header dt-card">
+      <div class="patient-detail__identity">
+        <span class="patient-detail__avatar" data-testid="patient-avatar">{{ initials() }}</span>
+        <div class="patient-detail__meta">
+          <h2 class="patient-detail__name" data-testid="patient-name">
+            {{ patient.firstName }} {{ patient.lastName }}
+          </h2>
+          <div class="patient-detail__facts">
+            @if (store.criticalFlags().length > 0) {
+              <span
+                class="patient-detail__critical"
+                data-testid="critical-flags-badge"
+                [pTooltip]="criticalTooltip()"
+                tooltipPosition="bottom"
+              >
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                {{ 'patients.header.criticalFlags' | transloco: { count: store.criticalFlags().length } }}
+              </span>
+            }
+            @if (age() !== null) {
+              <span>{{ 'patients.header.age' | transloco: { age: age() } }}</span>
+            }
+            @if (genderKey(); as gk) {
+              <span>{{ gk | transloco }}</span>
+            }
+            <span>{{ 'patients.header.fileNo' | transloco: { no: patient.fileNo } }}</span>
+            @if (patient.phone) {
+              <a class="patient-detail__phone" href="tel:{{ patient.phone }}">
+                <i class="fa-solid fa-phone" aria-hidden="true"></i> {{ patient.phone }}
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="patient-detail__right">
+        <span
+          class="patient-detail__balance"
+          [class.patient-detail__balance--debt]="patient.balance > 0"
+          [class.patient-detail__balance--ok]="patient.balance <= 0"
+        >
+          {{ 'patients.header.balance' | transloco }}: {{ patient.balance | money }}
+        </span>
+        <div class="patient-detail__actions">
+          <p-button
+            [label]="'patients.header.newAppointment' | transloco"
+            icon="fa-regular fa-calendar-plus"
+            size="small"
+            data-testid="patient-new-appointment"
+            (onClick)="goToCalendar()"
+          />
+          <p-button
+            [label]="'patients.header.consent' | transloco"
+            icon="fa-solid fa-file-signature"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            data-testid="patient-consent-btn"
+            (onClick)="consentDialogVisible.set(true)"
+          />
+          <p-button
+            [label]="'patients.header.sendSms' | transloco"
+            icon="fa-regular fa-comment-dots"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="true"
+            [pTooltip]="'common.comingSoon' | transloco"
+            tooltipPosition="bottom"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Sekme cubugu -->
+    <nav class="patient-detail__tabs dt-card">
+      @for (tab of tabs; track tab.path) {
+        <a
+          class="patient-detail__tab"
+          [routerLink]="tab.path"
+          routerLinkActive="patient-detail__tab--active"
+          [attr.data-testid]="'tab-' + tab.path"
+        >
+          <i [class]="tab.icon" aria-hidden="true"></i>
+          <span>{{ tab.labelKey | transloco }}</span>
+        </a>
+      }
+    </nav>
+
+    <!-- Sekme icerigi -->
+    <div class="patient-detail__content">
+      <router-outlet />
+    </div>
+  </div>
+
+  <!-- Onam olusturma + gecmis dialogu -->
+  <app-consent-dialog
+    [visible]="consentDialogVisible()"
+    (visibleChange)="consentDialogVisible.set($event)"
+  />
+} @else if (store.notFound()) {
+  <div class="dt-card p-8 text-center text-slate-400">
+    <i class="fa-regular fa-face-frown text-3xl" aria-hidden="true"></i>
+    <p class="mt-2">{{ 'patients.notFound' | transloco }}</p>
+  </div>
+} @else {
+  <div class="dt-card p-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+}

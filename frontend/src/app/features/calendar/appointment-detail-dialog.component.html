@@ -1,0 +1,155 @@
+<p-dialog
+  [visible]="appointment() !== null"
+  (visibleChange)="!$event ? closed.emit() : null"
+  [modal]="true"
+  [style]="{ width: '28rem', maxWidth: '95vw' }"
+  [header]="'calendar.appointmentDetail' | transloco"
+>
+  @if (appointment(); as appt) {
+    <div class="flex flex-col gap-4 pt-1" data-testid="appointment-detail">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-col">
+          @if (appt.patientId != null) {
+            <a
+              class="text-base font-semibold text-blue-600 hover:underline"
+              [routerLink]="['/app/patients', appt.patientId]"
+              (click)="closed.emit()"
+            >
+              {{ appt.patientName }}
+            </a>
+          } @else {
+            <span class="text-base font-semibold text-slate-700">
+              {{ appt.title || (typeKey() | transloco) }}
+            </span>
+          }
+          <span class="text-sm text-slate-500">{{ typeKey() | transloco }}</span>
+        </div>
+        <app-status-tag kind="appointment" [value]="appt.status" />
+      </div>
+
+      <div class="flex flex-col gap-1.5 text-sm text-slate-600">
+        <span>
+          <i class="fa-regular fa-clock mr-2 text-slate-400" aria-hidden="true"></i>
+          {{ appt.startUtc | trDate: 'dd MMMM yyyy EEEE' }} ·
+          {{ appt.startUtc | trDate: 'HH:mm' }} – {{ appt.endUtc | trDate: 'HH:mm' }}
+        </span>
+        <span>
+          <i class="fa-solid fa-user-doctor mr-2 text-slate-400" aria-hidden="true"></i>
+          {{ appt.doctorName }}
+        </span>
+        @if (appt.note) {
+          <span>
+            <i class="fa-regular fa-note-sticky mr-2 text-slate-400" aria-hidden="true"></i>
+            {{ appt.note }}
+          </span>
+        }
+        @if (appt.cancelReason) {
+          <span class="text-red-600">
+            <i class="fa-solid fa-ban mr-2" aria-hidden="true"></i>
+            {{ 'calendar.cancelReason' | transloco }}: {{ appt.cancelReason }}
+          </span>
+        }
+      </div>
+
+      <!-- Durum gecisleri -->
+      @if (
+        appt.status !== AppointmentStatus.Completed && appt.status !== AppointmentStatus.Cancelled
+      ) {
+        <div class="flex flex-wrap gap-2">
+          @if (appt.status !== AppointmentStatus.Arrived) {
+            <p-button
+              [label]="'calendar.actions.arrived' | transloco"
+              icon="fa-solid fa-person-walking"
+              size="small"
+              severity="warn"
+              [outlined]="true"
+              data-testid="status-arrived-btn"
+              [loading]="busy()"
+              (onClick)="setStatus(AppointmentStatus.Arrived)"
+            />
+          }
+          <p-button
+            [label]="'calendar.actions.completed' | transloco"
+            icon="fa-solid fa-check"
+            size="small"
+            severity="success"
+            [outlined]="true"
+            [loading]="busy()"
+            (onClick)="setStatus(AppointmentStatus.Completed)"
+          />
+          <p-button
+            [label]="'calendar.actions.noShow' | transloco"
+            icon="fa-solid fa-user-slash"
+            size="small"
+            severity="danger"
+            [outlined]="true"
+            [loading]="busy()"
+            (onClick)="setStatus(AppointmentStatus.NoShow)"
+          />
+          <p-button
+            *hasPermission="'appointment.cancel'"
+            [label]="'calendar.actions.cancel' | transloco"
+            icon="fa-solid fa-ban"
+            size="small"
+            severity="danger"
+            [text]="true"
+            [loading]="busy()"
+            (onClick)="setStatus(AppointmentStatus.Cancelled)"
+          />
+        </div>
+      }
+
+      @if (cancelMode()) {
+        <div class="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+          <label for="ad-cancel-reason" class="text-sm font-medium text-red-700">
+            {{ 'calendar.cancelReason' | transloco }} *
+          </label>
+          <textarea
+            id="ad-cancel-reason"
+            pTextarea
+            [(ngModel)]="cancelReason"
+            rows="2"
+            class="w-full"
+          ></textarea>
+          <div class="flex justify-end">
+            <p-button
+              [label]="'calendar.confirmCancel' | transloco"
+              size="small"
+              severity="danger"
+              [loading]="busy()"
+              (onClick)="setStatus(AppointmentStatus.Cancelled)"
+            />
+          </div>
+        </div>
+      }
+
+      <div class="flex items-center justify-between border-t border-slate-200 pt-3">
+        <ng-container *hasPermission="'appointment.delete'">
+          <p-button
+            [label]="'common.delete' | transloco"
+            icon="fa-regular fa-trash-can"
+            size="small"
+            severity="danger"
+            [text]="true"
+            (onClick)="remove()"
+          />
+        </ng-container>
+        <div class="flex gap-2">
+          <p-button
+            [label]="'common.edit' | transloco"
+            icon="fa-regular fa-pen-to-square"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="edit.emit(appt)"
+          />
+          <p-button
+            [label]="'common.close' | transloco"
+            size="small"
+            (onClick)="closed.emit()"
+          />
+        </div>
+      </div>
+    </div>
+  }
+</p-dialog>

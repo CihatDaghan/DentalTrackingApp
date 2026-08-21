@@ -1,0 +1,141 @@
+@if (loading()) {
+  <div class="dt-card flex items-center gap-2 p-6 text-sm text-slate-500">
+    <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+    {{ 'common.loading' | transloco }}
+  </div>
+} @else {
+  <div class="grid grid-cols-1 gap-4 xl:grid-cols-2" data-testid="automation-rules">
+    @for (card of cards(); track card.ruleType) {
+      <div
+        class="dt-card flex flex-col gap-4 p-4"
+        [class.opacity-70]="!card.isEnabled"
+        [attr.data-testid]="'rule-' + ruleKeys[card.ruleType]"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span
+              class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
+            >
+              <i [class]="card.icon" aria-hidden="true"></i>
+            </span>
+            <div class="flex flex-col">
+              <h3 class="text-sm font-semibold text-slate-800">
+                {{ 'messaging.automation.rule.' + ruleKeys[card.ruleType] | transloco }}
+              </h3>
+              <span class="text-xs text-slate-500">
+                {{ 'messaging.automation.hint.' + ruleKeys[card.ruleType] | transloco }}
+              </span>
+            </div>
+          </div>
+          <p-toggleswitch
+            [ngModel]="card.isEnabled"
+            (ngModelChange)="patch(card.ruleType, 'isEnabled', $event)"
+            [attr.data-testid]="'rule-toggle-' + ruleKeys[card.ruleType]"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div class="flex flex-col gap-1">
+            <label
+              [attr.for]="'policy-' + card.ruleType"
+              class="text-xs font-medium text-slate-500"
+            >
+              {{ 'messaging.automation.channelPolicy' | transloco }}
+            </label>
+            <p-select
+              [inputId]="'policy-' + card.ruleType"
+              [options]="policyOptions()"
+              [ngModel]="card.channelPolicy"
+              (ngModelChange)="patch(card.ruleType, 'channelPolicy', $event)"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full"
+              [attr.data-testid]="'rule-policy-' + ruleKeys[card.ruleType]"
+            />
+          </div>
+
+          @if (card.daily) {
+            <div class="flex flex-col gap-1">
+              <label
+                [attr.for]="'sendat-' + card.ruleType"
+                class="text-xs font-medium text-slate-500"
+              >
+                {{ 'messaging.automation.sendAt' | transloco }}
+              </label>
+              <p-datepicker
+                [inputId]="'sendat-' + card.ruleType"
+                [ngModel]="card.sendAt"
+                (ngModelChange)="patch(card.ruleType, 'sendAt', $event)"
+                [timeOnly]="true"
+                hourFormat="24"
+                [showIcon]="true"
+                iconDisplay="input"
+                styleClass="w-full"
+                [attr.data-testid]="'rule-sendat-' + ruleKeys[card.ruleType]"
+              />
+            </div>
+          } @else {
+            <div class="flex flex-col gap-1">
+              <label
+                [attr.for]="'offset-' + card.ruleType"
+                class="text-xs font-medium text-slate-500"
+              >
+                {{ 'messaging.automation.offsetHours' | transloco }}
+              </label>
+              <p-inputnumber
+                [inputId]="'offset-' + card.ruleType"
+                [ngModel]="card.offsetHours"
+                (ngModelChange)="patch(card.ruleType, 'offsetHours', $event)"
+                [min]="1"
+                [max]="168"
+                [showButtons]="true"
+                [suffix]="' ' + ('messaging.automation.hours' | transloco)"
+                [fluid]="true"
+                [attr.data-testid]="'rule-offset-' + ruleKeys[card.ruleType]"
+              />
+            </div>
+          }
+
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label
+              [attr.for]="'template-' + card.ruleType"
+              class="text-xs font-medium text-slate-500"
+            >
+              {{ 'messaging.automation.template' | transloco }}
+            </label>
+            <p-select
+              [inputId]="'template-' + card.ruleType"
+              [options]="templateOptions()"
+              [ngModel]="card.templateKey"
+              (ngModelChange)="patch(card.ruleType, 'templateKey', $event)"
+              optionLabel="label"
+              optionValue="value"
+              [editable]="true"
+              styleClass="w-full"
+              [attr.data-testid]="'rule-template-' + ruleKeys[card.ruleType]"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+          @if (card.dirty) {
+            <span class="mr-auto text-xs text-amber-600">
+              <i class="fa-solid fa-circle-exclamation mr-1" aria-hidden="true"></i>
+              {{ 'messaging.automation.unsaved' | transloco }}
+            </span>
+          }
+          <p-button
+            [label]="'common.save' | transloco"
+            icon="fa-solid fa-check"
+            size="small"
+            [loading]="card.saving"
+            [disabled]="!card.dirty"
+            (onClick)="save(card)"
+            [attr.data-testid]="'rule-save-' + ruleKeys[card.ruleType]"
+            *hasPermission="'settings.update'"
+          />
+        </div>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,390 @@
+<div class="flex flex-col gap-3" data-testid="admin-tenants">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h2 class="m-0 text-lg font-semibold text-slate-800">{{ 'admin.tenants.title' | transloco }}</h2>
+    <p-button
+      [label]="'admin.tenants.create' | transloco"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openWizard()"
+      data-testid="tenant-create"
+    />
+  </div>
+
+  <div class="dt-card p-3 flex items-end gap-3 flex-wrap">
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+        {{ 'common.search' | transloco }}
+      </span>
+      <input
+        pInputText
+        class="text-sm"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keyup.enter)="applyFilters()"
+        data-testid="tenant-search"
+      />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+        {{ 'admin.tenants.statusLabel' | transloco }}
+      </span>
+      <p-select
+        [options]="statusOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event); applyFilters()"
+        size="small"
+        appendTo="body"
+        data-testid="tenant-status-filter"
+      />
+    </label>
+    <p-button
+      [label]="'common.search' | transloco"
+      icon="fa-solid fa-magnifying-glass"
+      size="small"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="applyFilters()"
+    />
+  </div>
+
+  <div class="dt-card p-0 overflow-hidden">
+    <p-table
+      [value]="rows()"
+      [lazy]="true"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="pageSize"
+      [totalRecords]="totalCount()"
+      [first]="first()"
+      (onLazyLoad)="onLazyLoad($event)"
+      dataKey="id"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template #header>
+        <tr>
+          <th>{{ 'admin.tenants.name' | transloco }}</th>
+          <th>{{ 'admin.tenants.plan' | transloco }}</th>
+          <th>{{ 'admin.tenants.statusLabel' | transloco }}</th>
+          <th class="text-right!">{{ 'admin.tenants.users' | transloco }}</th>
+          <th class="text-right!">{{ 'admin.tenants.patients' | transloco }}</th>
+          <th>{{ 'admin.tenants.lastActivity' | transloco }}</th>
+          <th style="width: 11rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr [attr.data-testid]="'tenant-row-' + row.id">
+          <td class="font-medium text-slate-700">{{ row.name }}</td>
+          <td class="text-slate-500">{{ row.planName || row.planCode || '—' }}</td>
+          <td>
+            <span
+              class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              [class]="statusClass(row.status)"
+            >
+              {{ statusKey(row.status) | transloco }}
+            </span>
+          </td>
+          <td class="text-right!">{{ row.usage.userCount }}</td>
+          <td class="text-right!">{{ row.usage.patientCount }}</td>
+          <td class="text-slate-500 text-xs">
+            {{ row.usage.lastActivityUtc ? (row.usage.lastActivityUtc | trDate: 'dd.MM.yyyy HH:mm') : '—' }}
+          </td>
+          <td class="text-right! whitespace-nowrap">
+            <p-button
+              [text]="true"
+              size="small"
+              severity="secondary"
+              icon="fa-solid fa-circle-info"
+              [label]="'admin.tenants.detail' | transloco"
+              (onClick)="openDetail(row)"
+              [attr.data-testid]="'tenant-detail-' + row.id"
+            />
+            <p-button
+              [text]="true"
+              size="small"
+              severity="warn"
+              icon="fa-solid fa-user-secret"
+              (onClick)="impersonate(row)"
+              [attr.data-testid]="'tenant-impersonate-' + row.id"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7" class="text-center text-slate-400 py-6">{{ 'table.empty' | transloco }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Kiraci acma sihirbazi -->
+<p-dialog
+  [visible]="wizardVisible()"
+  (visibleChange)="wizardVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  [header]="'admin.tenants.createTitle' | transloco"
+  [draggable]="false"
+>
+  @if (createdPassword(); as password) {
+    <div class="flex flex-col gap-3" data-testid="tenant-created">
+      <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 flex flex-col gap-2">
+        <span class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          {{ 'admin.tenants.createdTitle' | transloco }}
+        </span>
+        <span class="text-xs text-emerald-800">
+          {{ 'admin.tenants.createdHint' | transloco: { email: createdEmail() } }}
+        </span>
+        <div class="flex items-center gap-2">
+          <code
+            class="flex-1 rounded bg-white border border-emerald-200 px-3 py-2 font-mono text-sm"
+            data-testid="tenant-password"
+          >
+            {{ password }}
+          </code>
+          <p-button
+            size="small"
+            [outlined]="true"
+            [icon]="passwordCopied() ? 'fa-solid fa-check' : 'fa-regular fa-copy'"
+            [label]="(passwordCopied() ? 'settings.staff.copied' : 'settings.staff.copy') | transloco"
+            (onClick)="copyPassword()"
+          />
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <p-button [label]="'common.close' | transloco" size="small" (onClick)="closeWizard()" />
+      </div>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.tenants.clinicName' | transloco }}
+        </span>
+        <input
+          pInputText
+          [ngModel]="wizard().clinicName"
+          (ngModelChange)="patchWizard({ clinicName: $event })"
+          data-testid="tenant-clinic-name"
+        />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'settings.clinic.legalType' | transloco }}
+        </span>
+        <p-select
+          [options]="legalTypeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="wizard().legalType"
+          (ngModelChange)="patchWizard({ legalType: $event })"
+          appendTo="body"
+          data-testid="tenant-legal-type"
+        />
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.firstName' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="wizard().adminFirstName"
+            (ngModelChange)="patchWizard({ adminFirstName: $event })"
+            data-testid="tenant-admin-first"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.lastName' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="wizard().adminLastName"
+            (ngModelChange)="patchWizard({ adminLastName: $event })"
+            data-testid="tenant-admin-last"
+          />
+        </label>
+      </div>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.tenants.adminEmail' | transloco }}
+        </span>
+        <input
+          pInputText
+          type="email"
+          [ngModel]="wizard().adminEmail"
+          (ngModelChange)="patchWizard({ adminEmail: $event })"
+          data-testid="tenant-admin-email"
+        />
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.clinic.taxNumber' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="wizard().taxNumber"
+            (ngModelChange)="patchWizard({ taxNumber: $event })"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.clinic.phone' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="wizard().phone"
+            (ngModelChange)="patchWizard({ phone: $event })"
+          />
+        </label>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="closeWizard()"
+        />
+        <p-button
+          [label]="'admin.tenants.create' | transloco"
+          icon="fa-solid fa-check"
+          size="small"
+          [loading]="creating()"
+          (onClick)="createTenant()"
+          data-testid="tenant-create-submit"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>
+
+<!-- Kiraci detayi -->
+<p-dialog
+  [visible]="detailVisible()"
+  (visibleChange)="detailVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '40rem' }"
+  [header]="'admin.tenants.detailTitle' | transloco"
+  [draggable]="false"
+>
+  @if (detail(); as d) {
+    <div class="flex flex-col gap-4" data-testid="tenant-detail-dialog">
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-base font-semibold text-slate-800">{{ d.name }}</span>
+        <p-button
+          [label]="'admin.impersonation.start' | transloco"
+          icon="fa-solid fa-user-secret"
+          size="small"
+          severity="warn"
+          (onClick)="impersonate(d)"
+          data-testid="tenant-detail-impersonate"
+        />
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        @for (stat of [
+          { key: 'users', value: d.usage.userCount },
+          { key: 'patients', value: d.usage.patientCount },
+          { key: 'appointments', value: d.usage.appointmentCount },
+          { key: 'treatments', value: d.usage.treatmentCount },
+          { key: 'invoices', value: d.usage.invoiceCount }
+        ]; track stat.key) {
+          <div class="rounded-lg border border-slate-200 p-2 flex flex-col">
+            <span class="text-[11px] uppercase tracking-wide text-slate-500">
+              {{ 'admin.tenants.' + stat.key | transloco }}
+            </span>
+            <span class="text-lg font-semibold text-slate-700">{{ stat.value }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'admin.tenants.plan' | transloco }}
+          </span>
+          <p-select
+            [options]="planOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="detailPlanCode()"
+            (ngModelChange)="detailPlanCode.set($event)"
+            appendTo="body"
+            size="small"
+            data-testid="tenant-detail-plan"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'admin.tenants.statusLabel' | transloco }}
+          </span>
+          <p-select
+            [options]="detailStatusOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="detailStatus()"
+            (ngModelChange)="detailStatus.set($event)"
+            appendTo="body"
+            size="small"
+            data-testid="tenant-detail-status"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'admin.tenants.trialEnds' | transloco }}
+          </span>
+          <p-datepicker
+            [ngModel]="detailTrialEnds()"
+            (ngModelChange)="detailTrialEnds.set($event)"
+            dateFormat="dd.mm.yy"
+            [showIcon]="true"
+            appendTo="body"
+            size="small"
+          />
+        </label>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.tenants.owners' | transloco }}
+        </span>
+        <ul class="m-0 pl-4 text-sm text-slate-600">
+          @for (owner of d.owners; track owner.id) {
+            <li>{{ owner.fullName }} — {{ owner.email }}</li>
+          }
+        </ul>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <p-button
+          [label]="'common.close' | transloco"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="detailVisible.set(false)"
+        />
+        <p-button
+          [label]="'common.save' | transloco"
+          icon="fa-solid fa-check"
+          size="small"
+          [loading]="detailSaving()"
+          (onClick)="saveDetail()"
+          data-testid="tenant-detail-save"
+        />
+      </div>
+    </div>
+  } @else {
+    <p class="text-slate-400 text-sm py-6 text-center">{{ 'common.loading' | transloco }}</p>
+  }
+</p-dialog>

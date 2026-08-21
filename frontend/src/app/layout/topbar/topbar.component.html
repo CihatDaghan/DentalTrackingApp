@@ -1,0 +1,41 @@
+<header class="topbar">
+  <h1 class="topbar__title">{{ titleKey() | transloco }}</h1>
+
+  <div class="topbar__actions">
+    <app-notification-bell />
+
+    <p-select
+      class="topbar__lang"
+      size="small"
+      [options]="languages"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="activeLang()"
+      (onChange)="setLang($event.value)"
+      [ariaLabel]="'common.language' | transloco"
+    />
+
+    <button type="button" class="topbar__user" (click)="userMenu.toggle($event)">
+      <span class="topbar__avatar">{{ initials() }}</span>
+      <span class="topbar__name">{{ authStore.fullName() }}</span>
+      <i class="pi pi-angle-down" aria-hidden="true"></i>
+    </button>
+
+    <p-popover #userMenu>
+      <div class="topbar__menu">
+        <div class="topbar__menu-user">
+          <span class="topbar__menu-name">{{ authStore.fullName() }}</span>
+          <span class="topbar__menu-email">{{ authStore.user()?.email }}</span>
+        </div>
+        <p-button
+          severity="danger"
+          [text]="true"
+          size="small"
+          icon="pi pi-sign-out"
+          [label]="'common.logout' | transloco"
+          (onClick)="logout()"
+        />
+      </div>
+    </p-popover>
+  </div>
+</header>

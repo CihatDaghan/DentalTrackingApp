@@ -1,0 +1,30 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64          # Apple Silicon: Rosetta emülasyonu
+    container_name: dental-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dental!Dev2026"   # yalnız dev; prod'da secret
+      MSSQL_PID: "Developer"
+    ports: ["14330:1433"]   # 1433/11433 makinedeki diğer projelerce dolu
+    volumes: ["mssql-data:/var/opt/mssql"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Dental!Dev2026' -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 12
+      start_period: 30s
+
+  minio:                            # dev dosya depolama (S3 uyumlu) — opsiyonel
+    image: minio/minio
+    container_name: dental-minio
+    command: server /data --console-address ":9001"
+    ports: ["9000:9000", "9001:9001"]
+    environment:
+      MINIO_ROOT_USER: dental
+      MINIO_ROOT_PASSWORD: "Dental!Dev2026"
+    volumes: ["minio-data:/data"]
+
+volumes:
+  mssql-data: {}
+  minio-data: {}

@@ -1,0 +1,76 @@
+<app-page-header [title]="'patients.title' | transloco">
+  <p-iconfield>
+    <p-inputicon styleClass="fa-solid fa-magnifying-glass" />
+    <input
+      pInputText
+      type="text"
+      data-testid="patient-search"
+      [placeholder]="'patients.searchPlaceholder' | transloco"
+      (input)="onSearchInput($event)"
+      class="w-72"
+    />
+  </p-iconfield>
+  <ng-container *hasPermission="'patient.create'">
+    <p-button
+      [label]="'patients.newPatient' | transloco"
+      icon="fa-solid fa-user-plus"
+      data-testid="new-patient-btn"
+      (onClick)="openCreate()"
+    />
+  </ng-container>
+</app-page-header>
+
+<div class="dt-card overflow-hidden">
+  <app-table
+    #table
+    [columns]="columns"
+    [loader]="loader"
+    [search]="search()"
+    (rowClick)="openRow($event)"
+  >
+    <ng-template #rowCells let-row>
+      <td>{{ row.fileNo }}</td>
+      <td class="font-medium">{{ row.firstName }} {{ row.lastName }}</td>
+      <td>{{ row.phone ?? '—' }}</td>
+      <td>{{ row.city ?? '—' }}</td>
+      <td>{{ row.createdAtUtc | trDate }}</td>
+      <td>
+        <span
+          class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold"
+          [class]="
+            row.balance > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+          "
+        >
+          {{ row.balance | money }}
+        </span>
+      </td>
+    </ng-template>
+  </app-table>
+</div>
+
+<p-dialog
+  [visible]="createVisible()"
+  (visibleChange)="createVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '46rem', maxWidth: '95vw' }"
+  [header]="'patients.newPatient' | transloco"
+  [contentStyle]="{ 'max-height': '70vh' }"
+>
+  @if (createVisible()) {
+    <app-patient-form #patientForm />
+    <div class="flex justify-end gap-2 pt-4">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="createVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        data-testid="patient-save-btn"
+        [loading]="saving()"
+        (onClick)="saveCreate()"
+      />
+    </div>
+  }
+</p-dialog>

@@ -1,0 +1,284 @@
+<div class="flex flex-col gap-3" data-testid="staff-settings">
+  <div class="flex items-center justify-between gap-3">
+    <span class="text-sm text-slate-500">
+      {{ 'settings.staff.count' | transloco: { count: staff().length } }}
+    </span>
+    <p-button
+      [label]="'settings.staff.add' | transloco"
+      icon="fa-solid fa-user-plus"
+      size="small"
+      (onClick)="openCreate()"
+      data-testid="staff-add"
+    />
+  </div>
+
+  <div class="dt-card p-0 overflow-hidden">
+    <p-table [value]="staff()" [loading]="loading()" styleClass="p-datatable-sm" dataKey="id">
+      <ng-template #header>
+        <tr>
+          <th>{{ 'settings.staff.name' | transloco }}</th>
+          <th>{{ 'settings.staff.email' | transloco }}</th>
+          <th>{{ 'settings.staff.type' | transloco }}</th>
+          <th>{{ 'settings.staff.roles' | transloco }}</th>
+          <th>{{ 'settings.staff.active' | transloco }}</th>
+          <th>{{ 'settings.staff.lastLogin' | transloco }}</th>
+          <th style="width: 8rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr [attr.data-testid]="'staff-row-' + row.id">
+          <td class="font-medium text-slate-700">
+            @if (row.color) {
+              <span
+                class="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
+                [style.background]="row.color"
+              ></span>
+            }
+            {{ row.fullName }}
+          </td>
+          <td class="text-slate-500">{{ row.email }}</td>
+          <td>{{ userTypeLabel(row.userType) | transloco }}</td>
+          <td class="text-slate-500">{{ roleNames(row) }}</td>
+          <td>
+            @if (row.isActive) {
+              <span class="text-emerald-600 text-xs font-semibold">
+                <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>
+                {{ 'common.yes' | transloco }}
+              </span>
+            } @else {
+              <span class="text-slate-400 text-xs font-semibold">
+                {{ 'common.no' | transloco }}
+              </span>
+            }
+          </td>
+          <td class="text-slate-500 text-xs">
+            {{ row.lastLoginUtc ? (row.lastLoginUtc | trDate: 'dd.MM.yyyy HH:mm') : '—' }}
+          </td>
+          <td class="text-right! whitespace-nowrap">
+            <p-button
+              [text]="true"
+              size="small"
+              severity="secondary"
+              icon="fa-solid fa-pen"
+              (onClick)="openEdit(row)"
+              [attr.data-testid]="'staff-edit-' + row.id"
+            />
+            <p-button
+              [text]="true"
+              size="small"
+              severity="secondary"
+              icon="fa-solid fa-key"
+              (onClick)="resetPassword(row)"
+              [attr.data-testid]="'staff-reset-' + row.id"
+            />
+            @if (row.isActive) {
+              <p-button
+                [text]="true"
+                size="small"
+                severity="danger"
+                icon="fa-solid fa-user-slash"
+                (onClick)="deactivate(row)"
+                [attr.data-testid]="'staff-deactivate-' + row.id"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7" class="text-center text-slate-400 py-6">
+            {{ 'table.empty' | transloco }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  [header]="(form().id ? 'settings.staff.editTitle' : 'settings.staff.addTitle') | transloco"
+  [draggable]="false"
+>
+  @if (tempPassword(); as password) {
+    <!-- Gecici sifre yalnizca bu ekranda gorunur; kopyalanip kullaniciya iletilmeli -->
+    <div class="flex flex-col gap-3" data-testid="temp-password-block">
+      <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 flex flex-col gap-2">
+        <span class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          {{ 'settings.staff.tempPassword' | transloco }}
+        </span>
+        <span class="text-xs text-emerald-800">
+          {{ 'settings.staff.tempPasswordHint' | transloco: { email: tempPasswordUser() } }}
+        </span>
+        <div class="flex items-center gap-2">
+          <code
+            class="flex-1 rounded bg-white border border-emerald-200 px-3 py-2 font-mono text-sm text-slate-800"
+            data-testid="temp-password-value"
+          >
+            {{ password }}
+          </code>
+          <p-button
+            size="small"
+            [outlined]="true"
+            [icon]="passwordCopied() ? 'fa-solid fa-check' : 'fa-regular fa-copy'"
+            [label]="(passwordCopied() ? 'settings.staff.copied' : 'settings.staff.copy') | transloco"
+            (onClick)="copyPassword()"
+            data-testid="temp-password-copy"
+          />
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <p-button
+          [label]="'common.close' | transloco"
+          size="small"
+          (onClick)="closeDialog()"
+          data-testid="temp-password-close"
+        />
+      </div>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-3">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.firstName' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="form().firstName"
+            (ngModelChange)="patch({ firstName: $event })"
+            data-testid="staff-first-name"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.lastName' | transloco }}
+          </span>
+          <input
+            pInputText
+            [ngModel]="form().lastName"
+            (ngModelChange)="patch({ lastName: $event })"
+            data-testid="staff-last-name"
+          />
+        </label>
+      </div>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'settings.staff.email' | transloco }}
+        </span>
+        <input
+          pInputText
+          type="email"
+          [ngModel]="form().email"
+          (ngModelChange)="patch({ email: $event })"
+          [disabled]="form().id !== null"
+          data-testid="staff-email"
+        />
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.type' | transloco }}
+          </span>
+          <p-select
+            [options]="userTypeOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="form().userType"
+            (ngModelChange)="patch({ userType: $event })"
+            appendTo="body"
+            data-testid="staff-type"
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-500">
+            {{ 'settings.staff.roles' | transloco }}
+          </span>
+          <p-multiselect
+            [options]="roleOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="form().roleIds"
+            (ngModelChange)="patch({ roleIds: $event })"
+            appendTo="body"
+            [showToggleAll]="false"
+            data-testid="staff-roles"
+          />
+        </label>
+      </div>
+
+      @if (isDoctor()) {
+        <div class="grid grid-cols-3 gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-500">
+              {{ 'settings.staff.color' | transloco }}
+            </span>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-slate-200"
+              [ngModel]="form().color"
+              (ngModelChange)="patch({ color: $event })"
+              data-testid="staff-color"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-500">
+              {{ 'settings.staff.branch' | transloco }}
+            </span>
+            <input
+              pInputText
+              [ngModel]="form().branch"
+              (ngModelChange)="patch({ branch: $event })"
+              data-testid="staff-branch"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-500">
+              {{ 'settings.staff.diplomaNo' | transloco }}
+            </span>
+            <input
+              pInputText
+              [ngModel]="form().diplomaNo"
+              (ngModelChange)="patch({ diplomaNo: $event })"
+              data-testid="staff-diploma"
+            />
+          </label>
+        </div>
+      }
+
+      @if (form().id) {
+        <div class="flex items-center gap-2">
+          <p-toggleswitch
+            [ngModel]="form().isActive"
+            (ngModelChange)="patch({ isActive: $event })"
+            data-testid="staff-active"
+          />
+          <span class="text-sm text-slate-600">{{ 'settings.staff.active' | transloco }}</span>
+        </div>
+      }
+
+      <div class="flex justify-end gap-2 pt-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="closeDialog()"
+        />
+        <p-button
+          [label]="'common.save' | transloco"
+          icon="fa-solid fa-check"
+          size="small"
+          [loading]="saving()"
+          (onClick)="save()"
+          data-testid="staff-save"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>

@@ -1,0 +1,143 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="!$event ? closed.emit() : null"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+  [header]="(isEdit() ? 'calendar.editAppointment' : 'calendar.newAppointment') | transloco"
+>
+  <form [formGroup]="form" class="flex flex-col gap-3 pt-1" (ngSubmit)="save()">
+    <div class="flex flex-col gap-1">
+      <span class="text-sm font-medium">{{ 'calendar.form.type' | transloco }}</span>
+      <p-selectbutton
+        formControlName="type"
+        [options]="typeOptions"
+        optionValue="value"
+        [allowEmpty]="false"
+        size="small"
+      >
+        <ng-template #item let-option>{{ option.labelKey | transloco }}</ng-template>
+      </p-selectbutton>
+    </div>
+
+    @if (patientRequired()) {
+      <div class="flex flex-col gap-1">
+        <label for="ap-patient" class="text-sm font-medium">
+          {{ 'calendar.form.patient' | transloco }} *
+        </label>
+        <app-patient-search-select
+          inputId="ap-patient"
+          formControlName="patient"
+          [allowQuickCreate]="true"
+        />
+        @if (form.controls.patient.touched && form.controls.patient.invalid) {
+          <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+        }
+      </div>
+    } @else {
+      <div class="flex flex-col gap-1">
+        <label for="ap-title" class="text-sm font-medium">
+          {{ 'calendar.form.title' | transloco }}
+        </label>
+        <input id="ap-title" pInputText formControlName="title" class="w-full" />
+      </div>
+    }
+
+    <div class="flex flex-col gap-1">
+      <label for="ap-doctor" class="text-sm font-medium">
+        {{ 'calendar.form.doctor' | transloco }} *
+      </label>
+      <p-select
+        inputId="ap-doctor"
+        formControlName="doctorUserId"
+        [options]="doctors()"
+        optionValue="id"
+        [fluid]="true"
+        appendTo="body"
+        [placeholder]="'calendar.form.doctorPlaceholder' | transloco"
+      >
+        <ng-template #selectedItem let-doctor>
+          @if (doctor) {
+            <span class="inline-flex items-center gap-2">
+              <span
+                class="inline-block h-2.5 w-2.5 rounded-full"
+                [style.background]="doctor.color ?? '#3b82f6'"
+              ></span>
+              {{ doctor.firstName }} {{ doctor.lastName }}
+            </span>
+          }
+        </ng-template>
+        <ng-template #item let-doctor>
+          <span class="inline-flex items-center gap-2">
+            <span
+              class="inline-block h-2.5 w-2.5 rounded-full"
+              [style.background]="doctor.color ?? '#3b82f6'"
+            ></span>
+            {{ doctor.firstName }} {{ doctor.lastName }}
+          </span>
+        </ng-template>
+      </p-select>
+      @if (form.controls.doctorUserId.touched && form.controls.doctorUserId.invalid) {
+        <small class="text-red-600">{{ 'validation.required' | transloco }}</small>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="ap-start" class="text-sm font-medium">
+          {{ 'calendar.form.start' | transloco }} *
+        </label>
+        <p-datepicker
+          inputId="ap-start"
+          formControlName="start"
+          [showTime]="true"
+          [stepMinute]="15"
+          dateFormat="dd.mm.yy"
+          [showIcon]="true"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="ap-duration" class="text-sm font-medium">
+          {{ 'calendar.form.duration' | transloco }}
+        </label>
+        <p-select
+          inputId="ap-duration"
+          formControlName="durationMinutes"
+          [options]="durationOptions"
+          optionLabel="label"
+          optionValue="value"
+          [fluid]="true"
+          appendTo="body"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="ap-note" class="text-sm font-medium">{{ 'calendar.form.note' | transloco }}</label>
+      <textarea id="ap-note" pTextarea formControlName="note" rows="2" class="w-full"></textarea>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-medium">{{ 'calendar.form.color' | transloco }}</span>
+      <p-colorpicker formControlName="color" appendTo="body" />
+      <span class="text-xs text-slate-400">{{ 'calendar.form.colorHint' | transloco }}</span>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closed.emit()"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="appointment-save-btn"
+        [loading]="saving()"
+      />
+    </div>
+  </form>
+</p-dialog>

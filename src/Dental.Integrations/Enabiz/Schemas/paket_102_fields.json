@@ -1,0 +1,306 @@
+{
+ "paket": "102",
+ "alanlar": [
+  {
+   "id": "0",
+   "depth": 0,
+   "ad": "HASTA_TAKIP_BILGISI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "0.0",
+   "depth": 1,
+   "ad": "SYSTakipNo",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Gönderilecek paketin ait olduğu hasta başvurusu için sistem tarafından ilk kayıt aşamasında verilen SYS Takip Numarası bilgisi"
+  },
+  {
+   "id": "1",
+   "depth": 0,
+   "ad": "HASTA_ISLEM_BILGILERI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0",
+   "depth": 1,
+   "ad": "ISLEM_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Evet",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": "Kaydedilecek işlemlere ait bilgilerin olduğu nesne"
+  },
+  {
+   "id": "1.0.0",
+   "depth": 2,
+   "ad": "TARAF_BILGISI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlem Sağ/Sol Bilgisi",
+   "codeSystemGuid": "05c03e8c-79fd-461e-8b78-99c3cfad011e",
+   "detayBaslik": "TARAF_BILGISI"
+  },
+  {
+   "id": "1.0.1",
+   "depth": 2,
+   "ad": "HEKIMIN_AMELIYATA_KARAR_VERDIGI_TARIH",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Hekimin ameliyata karar verdiği tarih bilgisi"
+  },
+  {
+   "id": "1.0.2",
+   "depth": 2,
+   "ad": "AMELIYAT_RANDEVU_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Hastaya verilen ameliyat randevu tarihi bilgisi"
+  },
+  {
+   "id": "1.0.3",
+   "depth": 2,
+   "ad": "HIZMET_ALIM_BILGISI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "2571ca21-163d-440c-bbd7-6e6ba1697a05",
+   "detayBaslik": "HIZMET_ALIM_BILGISI"
+  },
+  {
+   "id": "1.0.4",
+   "depth": 2,
+   "ad": "KLINIK_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlemin yapıldığı branşın SKRS kodu ve değeri.",
+   "codeSystemGuid": "c04bee57-c5d4-443d-e040-7b0a6f146a3d",
+   "detayBaslik": "KLINIK_KODU"
+  },
+  {
+   "id": "1.0.5",
+   "depth": 2,
+   "ad": "GERCEKLESME_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "İşlem Gerçekleşme Zamanı bilgisi(istek zamanı gönderilmemelidir). örn:\"201409231403\""
+  },
+  {
+   "id": "1.0.6",
+   "depth": 2,
+   "ad": "ISLEM_TURU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İlgili SKRS kod sisteminden seçilen Hizmet Türü kodu ve ilgili Hizmet Türü koduna karşılık gelen değer bilgisi",
+   "codeSystemGuid": "d03e562d-252e-451f-9a80-98d48b47c2f2",
+   "detayBaslik": "ISLEM_TURU"
+  },
+  {
+   "id": "1.0.7",
+   "depth": 2,
+   "ad": "ISLEM_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlem Kod bilgisi, hizmetler için Sağlık Uygulama Tebliği Listesi kodları, İlaç için Barkod bilgisi , SGK ödemeye tabii malzemeler için SUT Kodu , SGK ödemeye tabii olmayan malzemeler için Barkod bilgisi gönderilecektir."
+  },
+  {
+   "id": "1.0.8",
+   "depth": 2,
+   "ad": "ISLEM_ADI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlem Ad bilgisi"
+  },
+  {
+   "id": "1.0.9",
+   "depth": 2,
+   "ad": "GIRISIMSEL_ISLEM_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Yapılan işlemin Girişimsel İşlem Listesindeki kodu gönderilecektir. örn:'520030'"
+  },
+  {
+   "id": "1.0.10",
+   "depth": 2,
+   "ad": "ISLEM_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "İşlem Tarih bilgisi(istem tarihi gönderilmelidir). örn:\"201405280912\""
+  },
+  {
+   "id": "1.0.11",
+   "depth": 2,
+   "ad": "ADET",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "İşlem Adet bilgisi hizmetler için adet bilgisi, ilaç ve malzeme için MKYS de kayıtlı birime göre miktar bilgisi"
+  },
+  {
+   "id": "1.0.12",
+   "depth": 2,
+   "ad": "HASTA_TUTARI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "Hasta dosyasina islenen islemin hasta yansiyan Hasta Tutar bilgisi. örn:\"15.50\" BU VERI ELAMANINI OZEL VE UNIVERSITE HASTANELERININ GONDERMESINE GEREK YOKTUR."
+  },
+  {
+   "id": "1.0.13",
+   "depth": 2,
+   "ad": "KURUM_TUTARI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "Hasta dosyasina islenen islemin hastanin sosyal güvencesinin bulundugu kuruma yansiyan Kurum Tutar bilgisi. örn:\"15.50\"  BU VERI ELAMANINI OZEL VE UNIVERSITE HASTANELERININ GONDERMESINE GEREK YOKTUR."
+  },
+  {
+   "id": "1.0.14",
+   "depth": 2,
+   "ad": "RANDEVU_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "İşlemin Randevu Zamanı bilgisi. örn:\"201403140900\""
+  },
+  {
+   "id": "1.0.15",
+   "depth": 2,
+   "ad": "KULLANICI_KIMLIK_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlemi hasta dosyasına işleyen Kullanıcı Kimlik Numarası bilgisi"
+  },
+  {
+   "id": "1.0.16",
+   "depth": 2,
+   "ad": "CIHAZ_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlemin yapıldığı Cihaz Numarası, MKYS sistemindeki barkod numarası"
+  },
+  {
+   "id": "1.0.17",
+   "depth": 2,
+   "ad": "ISLEM_REFERANS_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "İşlemin hizmet sunucusuna özel tekil Referans Numarası bilgisi"
+  },
+  {
+   "id": "1.0.18",
+   "depth": 2,
+   "ad": "GEN_ISLEM_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.18.0",
+   "depth": 3,
+   "ad": "GEN_KODU",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "",
+   "codeSystemGuid": "5db9b171-50bb-4180-9d2e-67f35148ff82",
+   "detayBaslik": "GEN_KODU"
+  },
+  {
+   "id": "1.0.19",
+   "depth": 2,
+   "ad": "ISLEM_HEKIM_BILGISI",
+   "nesneTipi": "Grup",
+   "zorunlu": "Hayır",
+   "tekrar": "Evet",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.19.0",
+   "depth": 3,
+   "ad": "ASISTAN_HEKIM_KIMLIK_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": ""
+  },
+  {
+   "id": "1.0.19.1",
+   "depth": 3,
+   "ad": "HEKIM_KIMLIK_NUMARASI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "TCKimlikNo",
+   "tanim": "Hasta dosyasına işlenen işlemin puan sahibi Hekim Kimlik Numarası bilgisi"
+  },
+  {
+   "id": "1.0.19.2",
+   "depth": 3,
+   "ad": "ISLEM_PUANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "decimal",
+   "tanim": "Hasta dosyasına işlenen işlemin Performans Puanı bilgisi"
+  },
+  {
+   "id": "1.0.19.3",
+   "depth": 3,
+   "ad": "PUAN_HAKEDIS_ZAMANI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Hayır",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": "Hasta dosyasına işlenen işlemin Puan Hakediş Zamanı bilgisi (işlemin gerçekleşme zamanı, patoloji raporlarında rapor onay zamanı gibi). örn:\"201410211256\""
+  }
+ ],
+ "sonucKodlari": []
+}

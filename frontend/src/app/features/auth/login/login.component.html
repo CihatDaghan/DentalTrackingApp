@@ -1,0 +1,114 @@
+<div class="login">
+  <div class="login__card dt-card">
+    <!-- Sol panel: form -->
+    <section class="login__form-panel">
+      <div class="login__lang">
+        @for (lang of languages; track lang.value) {
+          <button
+            type="button"
+            class="login__lang-btn"
+            [class.login__lang-btn--active]="activeLang() === lang.value"
+            (click)="setLang(lang.value)"
+          >
+            {{ lang.label }}
+          </button>
+        }
+      </div>
+
+      <div class="login__logo">
+        <span class="login__logo-mark"><i class="fa-solid fa-tooth" aria-hidden="true"></i></span>
+        <span class="login__logo-text">{{ 'app.name' | transloco }}</span>
+      </div>
+
+      @if (step() === 'credentials') {
+        <h1 class="login__title">{{ 'login.welcome' | transloco }}</h1>
+        <p class="login__subtitle">{{ 'login.subtitle' | transloco }}</p>
+
+        <form class="login__form" [formGroup]="form" (ngSubmit)="submit()">
+          <div class="login__field">
+            <label for="email">{{ 'login.email' | transloco }}</label>
+            <input
+              id="email"
+              type="email"
+              pInputText
+              formControlName="email"
+              autocomplete="email"
+              [placeholder]="'login.emailPlaceholder' | transloco"
+            />
+          </div>
+
+          <div class="login__field">
+            <label for="password">{{ 'login.password' | transloco }}</label>
+            <p-password
+              inputId="password"
+              formControlName="password"
+              [toggleMask]="true"
+              [feedback]="false"
+              [fluid]="true"
+              autocomplete="current-password"
+              [placeholder]="'login.passwordPlaceholder' | transloco"
+            />
+          </div>
+
+          <div class="login__row">
+            <p-checkbox inputId="rememberMe" formControlName="rememberMe" [binary]="true" />
+            <label for="rememberMe" class="login__remember">{{ 'login.rememberMe' | transloco }}</label>
+          </div>
+
+          <app-turnstile (token)="turnstileToken.set($event)" />
+
+          @if (error()) {
+            <p-message severity="error" [text]="'login.error' | transloco" />
+          }
+
+          <p-button
+            type="submit"
+            [label]="'login.submit' | transloco"
+            [loading]="loading()"
+            [fluid]="true"
+          />
+        </form>
+      } @else {
+        <h1 class="login__title">{{ 'login.selectClinic' | transloco }}</h1>
+        <p class="login__subtitle">{{ 'login.selectClinicSubtitle' | transloco }}</p>
+
+        <div class="login__form">
+          <div class="login__field">
+            <label for="clinic">{{ 'login.clinic' | transloco }}</label>
+            <p-select
+              inputId="clinic"
+              [options]="clinics()"
+              optionLabel="name"
+              optionValue="id"
+              [fluid]="true"
+              [ngModel]="selectedClinicId()"
+              (onChange)="selectedClinicId.set($event.value)"
+              [placeholder]="'login.clinicPlaceholder' | transloco"
+            />
+          </div>
+
+          @if (error()) {
+            <p-message severity="error" [text]="'login.error' | transloco" />
+          }
+
+          <p-button
+            [label]="'common.continue' | transloco"
+            [loading]="loading()"
+            [disabled]="!selectedClinicId()"
+            [fluid]="true"
+            (onClick)="continueWithClinic()"
+          />
+        </div>
+      }
+    </section>
+
+    <!-- Sag panel: tanitim -->
+    <section class="login__promo-panel">
+      <h2 class="login__promo-title">{{ 'login.promoTitle' | transloco }}</h2>
+      <p class="login__promo-text">{{ 'login.promoText' | transloco }}</p>
+      <div class="login__promo-visual">
+        <i class="fa-solid fa-tooth" aria-hidden="true"></i>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="messaging" data-testid="messaging-page">
+  <app-page-header
+    [title]="'messaging.title' | transloco"
+    [subtitle]="'messaging.subtitle' | transloco"
+  />
+
+  <nav class="messaging__tabs dt-card" role="tablist">
+    @for (tab of tabs; track tab.key) {
+      <ng-container *hasPermission="tab.permission">
+        <button
+          type="button"
+          role="tab"
+          class="messaging__tab"
+          [class.messaging__tab--active]="activeTab() === tab.key"
+          [attr.aria-selected]="activeTab() === tab.key"
+          [attr.data-testid]="'msg-tab-' + tab.key"
+          (click)="select(tab.key)"
+        >
+          <i [class]="tab.icon" aria-hidden="true"></i>
+          <span>{{ 'messaging.tabs.' + tab.key | transloco }}</span>
+        </button>
+      </ng-container>
+    }
+  </nav>
+
+  <div class="messaging__panel">
+    @switch (activeTab()) {
+      @case ('history') {
+        <ng-container *hasPermission="'messaging.read'">
+          <app-message-history
+            [initialState]="initialState()"
+            [initialTemplateKey]="initialTemplateKey()"
+          />
+        </ng-container>
+      }
+      @case ('templates') {
+        <ng-container *hasPermission="'messaging.read'">
+          <app-message-templates />
+        </ng-container>
+      }
+      @case ('bulk') {
+        <ng-container *hasPermission="'messaging.bulk'">
+          <app-bulk-send />
+        </ng-container>
+      }
+      @case ('automation') {
+        <ng-container *hasPermission="'settings.view'">
+          <app-automation-rules />
+        </ng-container>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,46 @@
+{
+ "paket": "200",
+ "alanlar": [
+  {
+   "id": "0",
+   "depth": 0,
+   "ad": "VERI_PAKETI_SILME",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "0.0",
+   "depth": 1,
+   "ad": "SILINECEK_VERI_PAKETI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Silinmek istenen veri paketi tagı gönderilmelidir. örn: \"KADIN_IZLEM_15_49_YAS\""
+  },
+  {
+   "id": "1",
+   "depth": 0,
+   "ad": "HASTA_TAKIP_BILGISI",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "1.0",
+   "depth": 1,
+   "ad": "SYSTakipNo",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "string",
+   "tanim": "Gönderilecek paketin ait olduğu hasta başvurusu için sistem tarafından ilk kayıt aşamasında verilen SYS Takip Numarası bilgisi"
+  }
+ ],
+ "sonucKodlari": []
+}

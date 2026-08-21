@@ -1,0 +1,106 @@
+<div class="pay-page">
+  @switch (state()) {
+    @case ('polling') {
+      <div class="pay-page__status" data-testid="payment-result-polling">
+        <span class="pay-page__status-icon pay-page__status-icon--pending">
+          <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.result.pollingTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.result.pollingMessage' | transloco }}</p>
+        <div class="pay-page__progress" aria-hidden="true">
+          <div class="pay-page__progress-bar" [style.width.%]="progress()"></div>
+        </div>
+        <p class="pay-page__note" data-testid="payment-result-remaining">
+          {{ 'publicPayment.result.remaining' | transloco: { seconds: remainingSeconds() } }}
+        </p>
+      </div>
+    }
+    @case ('success') {
+      <div class="pay-page__status" data-testid="payment-result-success">
+        <span class="pay-page__status-icon pay-page__status-icon--success">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.result.successTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.result.successMessage' | transloco }}</p>
+
+        <dl class="pay-page__receipt" data-testid="payment-receipt">
+          @if (view(); as v) {
+            <div class="pay-page__receipt-row">
+              <dt>{{ 'publicPayment.result.clinic' | transloco }}</dt>
+              <dd>{{ v.clinicName }}</dd>
+            </div>
+            <div class="pay-page__receipt-row">
+              <dt>{{ 'publicPayment.patientLabel' | transloco }}</dt>
+              <dd>{{ v.patientName }}</dd>
+            </div>
+            @if (v.description) {
+              <div class="pay-page__receipt-row">
+                <dt>{{ 'publicPayment.result.description' | transloco }}</dt>
+                <dd>{{ v.description }}</dd>
+              </div>
+            }
+          }
+          <div class="pay-page__receipt-row">
+            <dt>{{ 'publicPayment.result.paidAmount' | transloco }}</dt>
+            <dd data-testid="receipt-amount">{{ amountText() }}</dd>
+          </div>
+          <div class="pay-page__receipt-row">
+            <dt>{{ 'publicPayment.result.paidAt' | transloco }}</dt>
+            <dd>{{ paidAtText() }}</dd>
+          </div>
+        </dl>
+      </div>
+    }
+    @case ('failed') {
+      <div class="pay-page__status" data-testid="payment-result-failed">
+        <span class="pay-page__status-icon pay-page__status-icon--error">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.result.failedTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.result.failedMessage' | transloco }}</p>
+        <a
+          class="pay-page__link"
+          [routerLink]="['/p', 'payment', token()]"
+          data-testid="payment-result-retry"
+        >
+          {{ 'publicPayment.result.tryAgain' | transloco }}
+        </a>
+      </div>
+    }
+    @case ('pending') {
+      <div class="pay-page__status" data-testid="payment-result-pending">
+        <span class="pay-page__status-icon pay-page__status-icon--warn">
+          <i class="fa-regular fa-clock" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.result.pendingTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.result.pendingMessage' | transloco }}</p>
+        <p-button
+          [label]="'publicPayment.result.checkAgain' | transloco"
+          icon="fa-solid fa-rotate-right"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="retry()"
+          data-testid="payment-result-check-again"
+        />
+      </div>
+    }
+    @case ('gone') {
+      <div class="pay-page__status" data-testid="payment-result-gone">
+        <span class="pay-page__status-icon pay-page__status-icon--warn">
+          <i class="fa-regular fa-hourglass-half" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.goneTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.goneMessage' | transloco }}</p>
+      </div>
+    }
+    @case ('error') {
+      <div class="pay-page__status" data-testid="payment-result-error">
+        <span class="pay-page__status-icon pay-page__status-icon--warn">
+          <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+        </span>
+        <h2>{{ 'publicPayment.errorTitle' | transloco }}</h2>
+        <p>{{ 'publicPayment.errorMessage' | transloco }}</p>
+      </div>
+    }
+  }
+</div>

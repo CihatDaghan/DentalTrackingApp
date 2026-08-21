@@ -1,0 +1,220 @@
+<app-page-header
+  [title]="'invoices.pageTitle' | transloco"
+  [subtitle]="'invoices.pageSubtitle' | transloco"
+>
+  <p-button
+    [label]="'invoices.newInvoice' | transloco"
+    icon="fa-solid fa-file-circle-plus"
+    size="small"
+    data-testid="new-invoice-btn"
+    (onClick)="newInvoice()"
+    *hasPermission="'invoice.create'"
+  />
+</app-page-header>
+
+<!-- Filtreler -->
+<div class="dt-card mb-4 flex flex-wrap items-end gap-3 p-3">
+  <div class="flex min-w-44 flex-col gap-1">
+    <label for="inv-f-status" class="text-[11px] font-medium text-slate-500">
+      {{ 'invoices.col.status' | transloco }}
+    </label>
+    <p-select
+      inputId="inv-f-status"
+      [options]="statusOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filterStatus()"
+      (ngModelChange)="filterStatus.set($event); reload()"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      [placeholder]="'common.all' | transloco"
+      data-testid="invoice-filter-status"
+    />
+  </div>
+
+  <div class="flex min-w-40 flex-col gap-1">
+    <label for="inv-f-from" class="text-[11px] font-medium text-slate-500">
+      {{ 'invoices.filter.from' | transloco }}
+    </label>
+    <p-datepicker
+      inputId="inv-f-from"
+      [ngModel]="filterFrom()"
+      (ngModelChange)="filterFrom.set($event); reload()"
+      dateFormat="dd.mm.yy"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      data-testid="invoice-filter-from"
+    />
+  </div>
+
+  <div class="flex min-w-40 flex-col gap-1">
+    <label for="inv-f-to" class="text-[11px] font-medium text-slate-500">
+      {{ 'invoices.filter.to' | transloco }}
+    </label>
+    <p-datepicker
+      inputId="inv-f-to"
+      [ngModel]="filterTo()"
+      (ngModelChange)="filterTo.set($event); reload()"
+      dateFormat="dd.mm.yy"
+      [showClear]="true"
+      [fluid]="true"
+      appendTo="body"
+      data-testid="invoice-filter-to"
+    />
+  </div>
+
+  <div class="flex min-w-56 flex-1 flex-col gap-1">
+    <label for="inv-f-search" class="text-[11px] font-medium text-slate-500">
+      {{ 'invoices.filter.search' | transloco }}
+    </label>
+    <input
+      id="inv-f-search"
+      pInputText
+      class="w-full"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearchChange($event)"
+      [placeholder]="'invoices.filter.searchPlaceholder' | transloco"
+      data-testid="invoice-filter-search"
+    />
+  </div>
+
+  <p-button
+    [label]="'invoices.filter.clear' | transloco"
+    icon="fa-solid fa-filter-circle-xmark"
+    size="small"
+    severity="secondary"
+    [text]="true"
+    (onClick)="clearFilters()"
+    data-testid="invoice-filter-clear"
+  />
+</div>
+
+<div class="dt-card p-2">
+  <app-table
+    [columns]="columns"
+    [loader]="loader"
+    [search]="searchTerm()"
+    [expandedRowKeys]="expandedRowKeys()"
+    dataKey="id"
+    (rowClick)="openDetail($event)"
+  >
+    <ng-template #rowCells let-row>
+      <td>
+        @if (row.errorMessage) {
+          <button
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            [attr.aria-expanded]="isExpanded(row)"
+            [attr.data-testid]="'invoice-expand-' + row.id"
+            [pTooltip]="'invoices.showError' | transloco"
+            (click)="toggleExpand(row, $event)"
+          >
+            <i
+              class="fa-solid"
+              [class.fa-chevron-right]="!isExpanded(row)"
+              [class.fa-chevron-down]="isExpanded(row)"
+              aria-hidden="true"
+            ></i>
+          </button>
+        }
+      </td>
+      <td class="font-mono text-xs">
+        {{ row.invoiceNumber || ('invoices.noNumber' | transloco) }}
+      </td>
+      <td><app-invoice-kind-tag [value]="row.documentKind" /></td>
+      <td><app-invoice-scenario-tag [value]="row.typeCode" /></td>
+      <td class="font-medium text-slate-700">{{ row.buyerName }}</td>
+      <td>{{ row.issueDate | trDate }}</td>
+      <td class="text-right font-semibold">{{ row.payableAmount | money }}</td>
+      <td>
+        <app-invoice-status-tag [value]="row.status" [attr.data-testid]="'invoice-status-' + row.id" />
+      </td>
+      <td>
+        <div class="flex items-center justify-end gap-1">
+          <p-button
+            icon="fa-solid fa-eye"
+            size="small"
+            severity="secondary"
+            [text]="true"
+            [rounded]="true"
+            [pTooltip]="'invoices.actions.detail' | transloco"
+            [attr.data-testid]="'invoice-detail-' + row.id"
+            (onClick)="openDetail(row)"
+          />
+          @if (row.status !== InvoiceStatus.Draft) {
+            <p-button
+              icon="fa-solid fa-file-code"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              [loading]="busyId() === row.id"
+              [pTooltip]="'invoices.actions.downloadUbl' | transloco"
+              [attr.data-testid]="'invoice-ubl-' + row.id"
+              (onClick)="downloadUbl(row, $event)"
+            />
+          }
+          @if (row.status === InvoiceStatus.Succeeded) {
+            <p-button
+              icon="fa-solid fa-file-pdf"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              [pTooltip]="'invoices.actions.downloadPdf' | transloco"
+              [attr.data-testid]="'invoice-pdf-' + row.id"
+              (onClick)="downloadPdf(row, $event)"
+            />
+          }
+          @if (row.status !== InvoiceStatus.Cancelled) {
+            <p-button
+              icon="fa-solid fa-ban"
+              size="small"
+              severity="danger"
+              [text]="true"
+              [rounded]="true"
+              [pTooltip]="'invoices.actions.cancel' | transloco"
+              [attr.data-testid]="'invoice-cancel-' + row.id"
+              (onClick)="cancel(row, $event)"
+              *hasPermission="'invoice.cancel'"
+            />
+          }
+        </div>
+      </td>
+    </ng-template>
+
+    <!-- Hata satiri detayi: entegrator mesaji + yeniden gonder -->
+    <ng-template #rowExpansion let-row>
+      <div
+        class="m-2 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+        [attr.data-testid]="'invoice-error-panel-' + row.id"
+      >
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 text-red-500" aria-hidden="true"></i>
+          <div class="flex flex-col gap-1">
+            <span class="text-sm font-semibold text-red-700">
+              {{ 'invoices.integratorError' | transloco }}
+            </span>
+            <span class="text-sm text-red-700/90">{{ row.errorMessage }}</span>
+          </div>
+        </div>
+        @if (isRetryable(row.status)) {
+          <div>
+            <p-button
+              [label]="'invoices.actions.retry' | transloco"
+              icon="fa-solid fa-rotate-right"
+              size="small"
+              severity="danger"
+              [loading]="busyId() === row.id"
+              [attr.data-testid]="'invoice-retry-' + row.id"
+              (onClick)="retry(row, $event)"
+              *hasPermission="'invoice.send'"
+            />
+          </div>
+        }
+      </div>
+    </ng-template>
+  </app-table>
+</div>

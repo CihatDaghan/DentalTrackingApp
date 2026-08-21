@@ -1,0 +1,452 @@
+<div class="dt-card p-4" data-testid="bulk-wizard">
+  @if (result(); as r) {
+    <!-- Sonuc karti -->
+    <div class="flex flex-col items-center gap-4 py-6" data-testid="bulk-result">
+      <span
+        class="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600"
+      >
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+      </span>
+      <h3 class="text-lg font-semibold text-slate-800">
+        {{ 'messaging.bulk.resultTitle' | transloco }}
+      </h3>
+
+      <div class="grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+          <div class="text-2xl font-bold text-slate-800" data-testid="bulk-targeted">
+            {{ r.targeted }}
+          </div>
+          <div class="text-xs text-slate-500">{{ 'messaging.bulk.targeted' | transloco }}</div>
+        </div>
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
+          <div class="text-2xl font-bold text-blue-700" data-testid="bulk-enqueued">
+            {{ r.enqueued }}
+          </div>
+          <div class="text-xs text-blue-600">{{ 'messaging.bulk.enqueued' | transloco }}</div>
+        </div>
+        <div class="rounded-lg border border-orange-200 bg-orange-50 p-3 text-center">
+          <div class="text-2xl font-bold text-orange-700" data-testid="bulk-no-consent">
+            {{ r.skippedNoConsent }}
+          </div>
+          <div class="text-xs text-orange-600">
+            {{ 'messaging.bulk.skippedNoConsent' | transloco }}
+          </div>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+          <div class="text-2xl font-bold text-slate-700" data-testid="bulk-no-phone">
+            {{ r.skippedNoPhone }}
+          </div>
+          <div class="text-xs text-slate-500">
+            {{ 'messaging.bulk.skippedNoPhone' | transloco }}
+          </div>
+        </div>
+      </div>
+
+      <p class="max-w-lg text-center text-sm text-slate-500">
+        {{ 'messaging.bulk.resultHint' | transloco }}
+      </p>
+
+      <p-button
+        [label]="'messaging.bulk.newBatch' | transloco"
+        icon="fa-solid fa-rotate-left"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="restart()"
+        data-testid="bulk-restart"
+      />
+    </div>
+  } @else {
+    <p-stepper [value]="step()" (valueChange)="step.set($any($event))">
+      <p-step-list>
+        <p-step [value]="1">{{ 'messaging.bulk.step1' | transloco }}</p-step>
+        <p-step [value]="2">{{ 'messaging.bulk.step2' | transloco }}</p-step>
+        <p-step [value]="3">{{ 'messaging.bulk.step3' | transloco }}</p-step>
+      </p-step-list>
+
+      <p-step-panels>
+        <!-- 1) Hedef kitle -->
+        <p-step-panel [value]="1">
+          <ng-template #content>
+            <div class="flex flex-col gap-4 pt-3">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-visit-from" class="text-sm font-medium">
+                    {{ 'messaging.bulk.lastVisitFrom' | transloco }}
+                  </label>
+                  <p-datepicker
+                    inputId="bulk-visit-from"
+                    [ngModel]="lastVisitFrom()"
+                    (ngModelChange)="lastVisitFrom.set($event); refreshVisitFilter()"
+                    dateFormat="dd.mm.yy"
+                    [showIcon]="true"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    data-testid="bulk-visit-from"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-visit-to" class="text-sm font-medium">
+                    {{ 'messaging.bulk.lastVisitTo' | transloco }}
+                  </label>
+                  <p-datepicker
+                    inputId="bulk-visit-to"
+                    [ngModel]="lastVisitTo()"
+                    (ngModelChange)="lastVisitTo.set($event); refreshVisitFilter()"
+                    dateFormat="dd.mm.yy"
+                    [showIcon]="true"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    data-testid="bulk-visit-to"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-doctor" class="text-sm font-medium">
+                    {{ 'messaging.bulk.doctor' | transloco }}
+                  </label>
+                  <p-select
+                    inputId="bulk-doctor"
+                    [options]="doctorOptions()"
+                    [ngModel]="doctorUserId()"
+                    (ngModelChange)="doctorUserId.set($event); refreshVisitFilter()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [showClear]="true"
+                    [placeholder]="'common.all' | transloco"
+                    styleClass="w-full"
+                    data-testid="bulk-doctor"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-sm font-medium">
+                    {{ 'messaging.bulk.debtStatus' | transloco }}
+                  </label>
+                  <p-selectbutton
+                    [options]="debtOptions()"
+                    [ngModel]="hasDebt()"
+                    (ngModelChange)="hasDebt.set($event)"
+                    optionLabel="labelKey"
+                    optionValue="value"
+                    [allowEmpty]="false"
+                    size="small"
+                    data-testid="bulk-debt"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-month" class="text-sm font-medium">
+                    {{ 'messaging.bulk.birthMonth' | transloco }}
+                  </label>
+                  <p-select
+                    inputId="bulk-month"
+                    [options]="monthOptions()"
+                    [ngModel]="birthMonth()"
+                    (ngModelChange)="birthMonth.set($event)"
+                    optionLabel="label"
+                    optionValue="value"
+                    [showClear]="true"
+                    [placeholder]="'common.all' | transloco"
+                    styleClass="w-full"
+                    data-testid="bulk-month"
+                  />
+                </div>
+                <div class="flex items-end">
+                  <p-button
+                    [label]="'messaging.bulk.clearFilters' | transloco"
+                    icon="fa-solid fa-filter-circle-xmark"
+                    size="small"
+                    severity="secondary"
+                    [text]="true"
+                    (onClick)="clearAudience()"
+                    data-testid="bulk-clear"
+                  />
+                </div>
+              </div>
+
+              <!-- Canli hedef sayisi -->
+              <div
+                class="flex flex-wrap items-center gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4"
+                data-testid="bulk-audience-summary"
+              >
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-bold text-blue-700" data-testid="bulk-target-count">
+                    {{ targetCount() }}
+                  </span>
+                  <span class="text-sm font-medium text-blue-700">
+                    {{ 'messaging.bulk.targetCount' | transloco }}
+                  </span>
+                </div>
+                @if (audienceLoading()) {
+                  <i class="fa-solid fa-spinner fa-spin text-blue-500" aria-hidden="true"></i>
+                }
+              </div>
+
+              <!-- Izin uyarisi (IYS/KVKK) -->
+              @if (noConsentCount(); as n) {
+                @if (n > 0) {
+                  <div
+                    class="flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 p-3"
+                    data-testid="bulk-consent-warning"
+                  >
+                    <i class="fa-solid fa-user-shield mt-0.5 text-orange-500" aria-hidden="true"></i>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-sm font-semibold text-orange-800">
+                        {{ 'messaging.bulk.noConsentWarning' | transloco: { count: n } }}
+                      </span>
+                      <span class="text-xs text-orange-700/90">
+                        {{ 'messaging.bulk.noConsentHint' | transloco }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              } @else if (!consentsLoaded()) {
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                  <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                  {{ 'messaging.bulk.consentLoading' | transloco }}
+                </div>
+              }
+
+              @if (noPhoneCount() > 0) {
+                <div class="text-xs text-slate-500" data-testid="bulk-no-phone-warning">
+                  <i class="fa-solid fa-phone-slash mr-1" aria-hidden="true"></i>
+                  {{ 'messaging.bulk.noPhoneWarning' | transloco: { count: noPhoneCount() } }}
+                </div>
+              }
+
+              <div class="flex justify-end pt-2">
+                <p-button
+                  [label]="'common.continue' | transloco"
+                  icon="fa-solid fa-arrow-right"
+                  iconPos="right"
+                  [disabled]="!canGoStep2()"
+                  (onClick)="goTo(2)"
+                  data-testid="bulk-next-1"
+                />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- 2) Sablon + onizleme -->
+        <p-step-panel [value]="2">
+          <ng-template #content>
+            <div class="grid grid-cols-1 gap-4 pt-3 lg:grid-cols-2">
+              <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-1">
+                  <label class="text-sm font-medium">
+                    {{ 'messaging.bulk.channel' | transloco }}
+                  </label>
+                  <p-selectbutton
+                    [options]="channelOptions()"
+                    [ngModel]="channel()"
+                    (ngModelChange)="onChannelChange($event)"
+                    optionLabel="label"
+                    optionValue="value"
+                    [allowEmpty]="false"
+                    size="small"
+                    data-testid="bulk-channel"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-template" class="text-sm font-medium">
+                    {{ 'messaging.bulk.template' | transloco }} *
+                  </label>
+                  <p-select
+                    inputId="bulk-template"
+                    [options]="templateOptions()"
+                    [ngModel]="templateKey()"
+                    (ngModelChange)="templateKey.set($event); useTemplateBody()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'messaging.bulk.templatePlaceholder' | transloco"
+                    styleClass="w-full"
+                    data-testid="bulk-template"
+                  />
+                </div>
+
+                @if (selectedKind() === MessageKind.Commercial) {
+                  <div
+                    class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+                    data-testid="bulk-commercial-warning"
+                  >
+                    <i class="fa-solid fa-shield-halved mt-0.5 text-red-500" aria-hidden="true"></i>
+                    <span class="text-sm text-red-700">
+                      {{ 'messaging.templates.commercialWarning' | transloco }}
+                    </span>
+                  </div>
+                }
+
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-body" class="text-sm font-medium">
+                    {{ 'messaging.bulk.bodyOverride' | transloco }}
+                  </label>
+                  <textarea
+                    id="bulk-body"
+                    pTextarea
+                    rows="4"
+                    class="w-full font-mono text-sm"
+                    [ngModel]="bodyOverride()"
+                    (ngModelChange)="bodyOverride.set($event)"
+                    [placeholder]="selectedTemplate()?.body || ''"
+                    data-testid="bulk-body"
+                  ></textarea>
+                  <span class="text-xs text-slate-400">
+                    {{ 'messaging.bulk.bodyOverrideHint' | transloco }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Onizleme -->
+              <div class="flex flex-col gap-2">
+                <span class="text-sm font-medium">
+                  {{ 'messaging.bulk.preview' | transloco }}
+                </span>
+                <div
+                  class="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                  data-testid="bulk-preview"
+                >
+                  <div class="mx-auto max-w-sm rounded-2xl bg-white p-3 shadow-sm">
+                    <div class="mb-2 flex items-center gap-2 border-b border-slate-100 pb-2">
+                      <i class="fa-solid fa-comment-sms text-blue-500" aria-hidden="true"></i>
+                      <span class="text-xs font-semibold text-slate-500">
+                        {{ 'app.name' | transloco }}
+                      </span>
+                    </div>
+                    <p class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                      {{ preview() || ('messaging.bulk.previewEmpty' | transloco) }}
+                    </p>
+                  </div>
+                  @if (preview()) {
+                    <div class="mt-3 text-center text-xs text-slate-500">
+                      {{
+                        'messaging.templates.charCount'
+                          | transloco
+                            : { length: previewParts().length, perPart: previewParts().perPart }
+                      }}
+                      ·
+                      {{
+                        'messaging.templates.partCount'
+                          | transloco: { parts: previewParts().parts }
+                      }}
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between pt-4">
+              <p-button
+                [label]="'common.back' | transloco"
+                icon="fa-solid fa-arrow-left"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="goTo(1)"
+                data-testid="bulk-back-2"
+              />
+              <p-button
+                [label]="'common.continue' | transloco"
+                icon="fa-solid fa-arrow-right"
+                iconPos="right"
+                [disabled]="!canGoStep3()"
+                (onClick)="goTo(3)"
+                data-testid="bulk-next-2"
+              />
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- 3) Zamanlama + onay -->
+        <p-step-panel [value]="3">
+          <ng-template #content>
+            <div class="flex flex-col gap-4 pt-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">
+                  {{ 'messaging.bulk.schedule' | transloco }}
+                </label>
+                <p-selectbutton
+                  [options]="[
+                    { label: 'messaging.bulk.sendNow' | transloco, value: 'now' },
+                    { label: 'messaging.bulk.sendLater' | transloco, value: 'later' },
+                  ]"
+                  [ngModel]="scheduleMode()"
+                  (ngModelChange)="scheduleMode.set($event)"
+                  optionLabel="label"
+                  optionValue="value"
+                  [allowEmpty]="false"
+                  size="small"
+                  data-testid="bulk-schedule-mode"
+                />
+              </div>
+
+              @if (scheduleMode() === 'later') {
+                <div class="flex flex-col gap-1">
+                  <label for="bulk-scheduled-at" class="text-sm font-medium">
+                    {{ 'messaging.bulk.scheduledAt' | transloco }}
+                  </label>
+                  <p-datepicker
+                    inputId="bulk-scheduled-at"
+                    [ngModel]="scheduledAt()"
+                    (ngModelChange)="scheduledAt.set($event)"
+                    [showTime]="true"
+                    hourFormat="24"
+                    dateFormat="dd.mm.yy"
+                    [showIcon]="true"
+                    styleClass="w-64"
+                    data-testid="bulk-scheduled-at"
+                  />
+                </div>
+              }
+
+              <!-- Onay ozeti -->
+              <div
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4"
+                data-testid="bulk-summary"
+              >
+                <h4 class="text-sm font-semibold text-slate-700">
+                  {{ 'messaging.bulk.confirmTitle' | transloco }}
+                </h4>
+                <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm md:grid-cols-3">
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-500">{{ 'messaging.bulk.targetCount' | transloco }}</dt>
+                    <dd class="font-semibold text-slate-800">{{ targetCount() }}</dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-500">{{ 'messaging.bulk.template' | transloco }}</dt>
+                    <dd class="font-mono text-xs text-slate-800">{{ templateKey() }}</dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-500">{{ 'messaging.bulk.channel' | transloco }}</dt>
+                    <dd class="font-semibold text-slate-800">{{ channelLabel(channel()) }}</dd>
+                  </div>
+                </dl>
+                @if (noConsentCount(); as n) {
+                  @if (n > 0 && selectedKind() === MessageKind.Commercial) {
+                    <span class="text-xs text-orange-700">
+                      {{ 'messaging.bulk.noConsentWarning' | transloco: { count: n } }}
+                    </span>
+                  }
+                }
+              </div>
+
+              <div class="flex justify-between pt-2">
+                <p-button
+                  [label]="'common.back' | transloco"
+                  icon="fa-solid fa-arrow-left"
+                  severity="secondary"
+                  [outlined]="true"
+                  (onClick)="goTo(2)"
+                  data-testid="bulk-back-3"
+                />
+                <p-button
+                  [label]="'messaging.bulk.send' | transloco"
+                  icon="fa-solid fa-paper-plane"
+                  [loading]="sending()"
+                  (onClick)="send()"
+                  data-testid="bulk-send"
+                />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  }
+</div>

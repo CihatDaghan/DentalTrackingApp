@@ -1,0 +1,165 @@
+<div class="dt-card p-5 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h3 class="m-0 text-base font-semibold text-slate-700">
+      {{ 'laboratory.patientTabTitle' | transloco }}
+    </h3>
+    <p-button
+      [label]="'laboratory.newCase' | transloco"
+      icon="fa-solid fa-flask"
+      size="small"
+      data-testid="new-lab-case-btn"
+      (onClick)="openNew()"
+      *hasPermission="'lab.create'"
+    />
+  </div>
+
+  @if (loading()) {
+    <div class="py-8 text-center text-slate-400">{{ 'common.loading' | transloco }}</div>
+  } @else if (cases().length === 0) {
+    <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+      <i class="fa-solid fa-flask text-2xl" aria-hidden="true"></i>
+      <span>{{ 'laboratory.emptyPatient' | transloco }}</span>
+    </div>
+  } @else {
+    <p-table
+      [value]="cases()"
+      [rowHover]="true"
+      dataKey="id"
+      (onRowExpand)="onRowExpand($event.data)"
+      data-testid="lab-case-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 3rem"></th>
+          <th style="width: 10rem">{{ 'laboratory.col.caseNo' | transloco }}</th>
+          <th>{{ 'laboratory.col.workType' | transloco }}</th>
+          <th style="width: 10rem">{{ 'laboratory.col.laboratory' | transloco }}</th>
+          <th style="width: 7rem">{{ 'laboratory.col.teeth' | transloco }}</th>
+          <th style="width: 6rem">{{ 'laboratory.col.shade' | transloco }}</th>
+          <th style="width: 9rem">{{ 'laboratory.col.dueDate' | transloco }}</th>
+          <th style="width: 8rem">{{ 'laboratory.col.price' | transloco }}</th>
+          <th style="width: 9rem">{{ 'laboratory.col.status' | transloco }}</th>
+          <th style="width: 7rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row let-expanded="expanded">
+        <tr [class.lab-row--overdue]="row.isOverdue" [attr.data-testid]="'lab-case-row-' + row.id">
+          <td>
+            <p-button
+              type="button"
+              [icon]="expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right'"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pRowToggler]="row"
+              [attr.data-testid]="'lab-case-expand-' + row.id"
+            />
+          </td>
+          <td class="font-medium text-slate-600">{{ row.caseNo }}</td>
+          <td>
+            {{ row.workType }}
+            @if (row.material) {
+              <span class="ml-1 text-xs text-slate-400">{{ row.material }}</span>
+            }
+          </td>
+          <td>{{ row.laboratoryName }}</td>
+          <td>{{ row.teethCsv || '—' }}</td>
+          <td>{{ row.shade || '—' }}</td>
+          <td>
+            <span
+              class="whitespace-nowrap"
+              [class.text-red-600]="row.isOverdue"
+              [class.font-semibold]="row.isOverdue"
+            >
+              {{ row.dueDate | trDate: 'dd.MM.yyyy' : true }}
+              @if (row.isOverdue) {
+                <i
+                  class="fa-solid fa-triangle-exclamation ml-1"
+                  [pTooltip]="'laboratory.overdue' | transloco"
+                  tooltipPosition="top"
+                  aria-hidden="true"
+                ></i>
+              }
+            </span>
+          </td>
+          <td>{{ row.price | money }}</td>
+          <td><app-status-tag kind="labCase" [value]="row.status" /></td>
+          <td class="whitespace-nowrap text-right">
+            <p-button
+              icon="fa-solid fa-arrow-right-arrow-left"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'laboratory.changeStatus' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'lab-case-status-' + row.id"
+              (onClick)="openStatus(row)"
+              *hasPermission="'lab.update'"
+            />
+            <p-button
+              icon="fa-regular fa-pen-to-square"
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'common.edit' | transloco"
+              tooltipPosition="top"
+              [attr.data-testid]="'lab-case-edit-' + row.id"
+              (onClick)="openEdit(row)"
+              *hasPermission="'lab.update'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #expandedrow let-row>
+        <tr>
+          <td colspan="10" class="bg-slate-50">
+            <div class="flex flex-col gap-2 py-2 pl-2">
+              <span class="text-xs font-semibold text-slate-500">
+                {{ 'laboratory.statusHistory' | transloco }}
+              </span>
+              @if (historyOf(row.id).length === 0) {
+                <span class="text-xs text-slate-400">{{ 'laboratory.noHistory' | transloco }}</span>
+              } @else {
+                <ul class="m-0 flex list-none flex-col gap-1 pl-0">
+                  @for (h of historyOf(row.id); track h.id) {
+                    <li class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span class="w-32 shrink-0 text-slate-400">
+                        {{ h.changedAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}
+                      </span>
+                      <app-status-tag kind="labCase" [value]="h.status" />
+                      <span>{{ h.changedByName || '—' }}</span>
+                      @if (h.note) {
+                        <span class="text-slate-400">· {{ h.note }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+              @if (row.note) {
+                <p class="m-0 text-xs text-slate-500">
+                  <span class="font-semibold">{{ 'laboratory.form.note' | transloco }}:</span>
+                  {{ row.note }}
+                </p>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</div>
+
+<app-lab-case-dialog
+  [visible]="caseDialogVisible()"
+  (visibleChange)="caseDialogVisible.set($event)"
+  [patientId]="patientId()"
+  [editing]="editingCase()"
+  (saved)="reload()"
+/>
+
+<app-lab-status-dialog
+  [visible]="statusDialogVisible()"
+  (visibleChange)="statusDialogVisible.set($event)"
+  [labCase]="statusTarget()"
+  (changed)="onStatusChanged()"
+/>

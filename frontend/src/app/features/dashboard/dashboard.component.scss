@@ -1,0 +1,412 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dashboard__welcome {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.dashboard__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard__kpi {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.dashboard__kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #3b82f6;
+  font-size: 1.05rem;
+}
+
+.dashboard__kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.dashboard__kpi-label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.dashboard__kpi-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Bekleyen isler */
+.dashboard__pending {
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 1.25rem;
+}
+
+.dashboard__pending-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.dashboard__pending-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.dashboard__pending-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.dashboard__pending-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff5f5;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    border-color: #f87171;
+    box-shadow: 0 4px 10px rgba(185, 28, 28, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &--zero {
+    border-color: #e2e8f0;
+    background: #f8fafc;
+
+    &:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+    }
+
+    .dashboard__pending-icon {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+
+    .dashboard__pending-count {
+      color: #64748b;
+    }
+  }
+}
+
+.dashboard__pending-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 1rem;
+}
+
+.dashboard__pending-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.dashboard__pending-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #b91c1c;
+}
+
+.dashboard__pending-label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.dashboard__pending-arrow {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.dashboard__appointments {
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 1.25rem;
+}
+
+.dashboard__appointments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.dashboard__appointments-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #2563eb;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.dashboard__appointments-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 200px;
+  color: #94a3b8;
+
+  i {
+    font-size: 2.25rem;
+    color: #cbd5e1;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.dashboard__appointment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard__appointment {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.25rem;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.dashboard__appointment-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.85rem;
+  min-width: 6.5rem;
+}
+
+.dashboard__appointment-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dashboard__appointment-patient {
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+  flex: 0 0 auto;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &--empty {
+    color: #64748b;
+    font-style: italic;
+  }
+}
+
+.dashboard__appointment-doctor {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  flex: 1 1 auto;
+}
+
+/* --- Grafik + dogum gunleri seridi (E3) ----------------------------------- */
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard__chart,
+.dashboard__birthdays {
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 1.25rem;
+  min-width: 0;
+}
+
+.dashboard__chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.dashboard__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #2563eb;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.dashboard__empty {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.dashboard__birthday-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+}
+
+.dashboard__birthday-name {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.dashboard__birthday-age {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.dashboard__birthday-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
+.dashboard__appointment-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.dashboard__appointment-statuses {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.dashboard__appointment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: #475569;
+}

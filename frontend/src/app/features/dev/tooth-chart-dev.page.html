@@ -1,0 +1,100 @@
+<div class="tcdev">
+  <!-- Kontroller -->
+  <div class="tcdev__controls dt-card">
+    <div class="tcdev__control">
+      <span class="tcdev__label">{{ 'devToothChart.dentition' | transloco }}</span>
+      <div class="tcdev__seg" role="group">
+        <button
+          type="button"
+          [class.active]="dentition() === 'adult'"
+          (click)="setDentition('adult')"
+        >
+          {{ 'toothChart.dentition.adult' | transloco }}
+        </button>
+        <button
+          type="button"
+          [class.active]="dentition() === 'primary'"
+          (click)="setDentition('primary')"
+        >
+          {{ 'toothChart.dentition.primary' | transloco }}
+        </button>
+      </div>
+    </div>
+
+    <div class="tcdev__control">
+      <span class="tcdev__label">{{ 'devToothChart.activeLayer' | transloco }}</span>
+      <div class="tcdev__seg" role="group">
+        @for (layer of layers; track layer) {
+          <button
+            type="button"
+            [class.active]="activeLayer() === layer"
+            (click)="activeLayer.set(layer)"
+          >
+            {{ 'toothChart.layers.' + layer | transloco }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="tcdev__control tcdev__control--checks">
+      <label class="tcdev__check">
+        <input type="checkbox" [checked]="mixed()" (change)="mixed.set(!mixed())" />
+        {{ 'devToothChart.mixed' | transloco }}
+      </label>
+      <label class="tcdev__check">
+        <input type="checkbox" [checked]="readonly()" (change)="readonly.set(!readonly())" />
+        {{ 'devToothChart.readonly' | transloco }}
+      </label>
+    </div>
+  </div>
+
+  <!-- Sema -->
+  <div class="tcdev__chart dt-card">
+    <app-tooth-chart
+      [dentition]="dentition()"
+      [teeth]="teeth()"
+      [activeLayer]="activeLayer()"
+      [readonly]="readonly()"
+      [mixedOverrides]="overrides()"
+      (toothClick)="onToothClick($event)"
+      (surfaceClick)="onSurfaceClick($event)"
+      (selectionChange)="onSelectionChange($event)"
+    />
+  </div>
+
+  <div class="tcdev__bottom">
+    <!-- Lejant -->
+    <div class="tcdev__panel dt-card">
+      <h3>{{ 'toothChart.legend.title' | transloco }}</h3>
+      <app-tooth-chart-legend [items]="legendItems" />
+    </div>
+
+    <!-- Secim + olay gunlugu -->
+    <div class="tcdev__panel dt-card">
+      <h3>{{ 'devToothChart.selected' | transloco }}</h3>
+      <div class="tcdev__selected">
+        @if (selected().length) {
+          @for (no of selected(); track no) {
+            <span class="tcdev__tooth-chip">{{ no }}</span>
+          }
+        } @else {
+          <span class="tcdev__muted">{{ 'devToothChart.none' | transloco }}</span>
+        }
+      </div>
+
+      <h3>{{ 'devToothChart.events' | transloco }}</h3>
+      <div class="tcdev__log" role="log">
+        @if (events().length) {
+          @for (entry of events(); track $index) {
+            <div class="tcdev__log-row">
+              <span class="tcdev__log-time">{{ entry.time }}</span>
+              <code>{{ entry.text }}</code>
+            </div>
+          }
+        } @else {
+          <span class="tcdev__muted">{{ 'devToothChart.noEvents' | transloco }}</span>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,521 @@
+<div class="flex flex-col gap-4">
+  <!-- Ozet kartlari -->
+  @if (statement(); as st) {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="dt-card p-4 flex flex-col gap-1" data-testid="summary-treatment">
+        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
+          {{ 'payment.summary.totalTreatment' | transloco }}
+        </span>
+        <span class="text-xl font-semibold text-slate-700">
+          {{ st.summary.totalTreatment | money }}
+        </span>
+      </div>
+      <div class="dt-card p-4 flex flex-col gap-1" data-testid="summary-collections">
+        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
+          {{ 'payment.summary.totalPayment' | transloco }}
+        </span>
+        <span class="text-xl font-semibold text-emerald-600">
+          {{ st.summary.totalPayment | money }}
+        </span>
+        @if (st.summary.totalDiscount > 0) {
+          <span class="text-xs text-teal-600">
+            {{ 'payment.summary.totalDiscount' | transloco }}: {{ st.summary.totalDiscount | money }}
+          </span>
+        }
+      </div>
+      <div class="dt-card p-4 flex flex-col gap-1" data-testid="summary-balance">
+        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
+          {{ 'payment.summary.balance' | transloco }}
+        </span>
+        <span
+          class="text-xl font-semibold"
+          [class.text-red-600]="st.summary.balance > 0"
+          [class.text-emerald-600]="st.summary.balance <= 0"
+        >
+          {{ st.summary.balance | money }}
+        </span>
+      </div>
+    </div>
+  }
+
+  <!-- Cari ekstre -->
+  <div class="dt-card p-5 flex flex-col gap-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h3 class="m-0 text-base font-semibold text-slate-700">
+        {{ 'payment.statementTitle' | transloco }}
+      </h3>
+      <div class="flex gap-2">
+        <p-button
+          [label]="'payment.createInvoice' | transloco"
+          icon="fa-solid fa-file-invoice"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          data-testid="create-invoice-btn"
+          routerLink="/app/invoices/new"
+          [queryParams]="{ patientId: patientId() }"
+          *hasPermission="'invoice.create'"
+        />
+        <p-button
+          [label]="'payment.applyDiscount' | transloco"
+          icon="fa-solid fa-percent"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          data-testid="discount-btn"
+          (onClick)="openDiscount()"
+          *hasPermission="'payment.discount'"
+        />
+        <p-button
+          [label]="'payment.collect' | transloco"
+          icon="fa-solid fa-hand-holding-dollar"
+          size="small"
+          data-testid="collect-btn"
+          (onClick)="openCollect()"
+          *hasPermission="'payment.create'"
+        />
+      </div>
+    </div>
+
+    <p-table [value]="statement()?.lines ?? []" [loading]="loading()" [rowHover]="true" dataKey="id">
+      <ng-template #header>
+        <tr>
+          <th>{{ 'payment.columns.date' | transloco }}</th>
+          <th>{{ 'payment.columns.type' | transloco }}</th>
+          <th>{{ 'payment.columns.description' | transloco }}</th>
+          <th class="text-right!">{{ 'payment.columns.debit' | transloco }}</th>
+          <th class="text-right!">{{ 'payment.columns.credit' | transloco }}</th>
+          <th class="text-right!">{{ 'payment.columns.runningBalance' | transloco }}</th>
+          <th style="width: 4rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-line>
+        <tr [attr.data-testid]="'ledger-line-' + line.id">
+          <td class="whitespace-nowrap">{{ line.entryDate | trDate: 'dd.MM.yyyy' : true }}</td>
+          <td><app-status-tag kind="ledger" [value]="line.entryType" /></td>
+          <td class="max-w-72 truncate" [pTooltip]="line.description" tooltipPosition="top">
+            {{ line.description ?? '—' }}
+          </td>
+          <td class="text-right! whitespace-nowrap">
+            @if (line.debit > 0) {
+              <span class="text-red-600">{{ line.debit | money }}</span>
+            } @else {
+              <span class="text-slate-300">—</span>
+            }
+          </td>
+          <td class="text-right! whitespace-nowrap">
+            @if (line.credit > 0) {
+              <span class="text-emerald-600">{{ line.credit | money }}</span>
+            } @else {
+              <span class="text-slate-300">—</span>
+            }
+          </td>
+          <td
+            class="text-right! whitespace-nowrap font-medium"
+            [class.text-red-600]="line.runningBalance > 0"
+            [class.text-emerald-600]="line.runningBalance <= 0"
+          >
+            {{ line.runningBalance | money }}
+          </td>
+          <td>
+            @if (canDeleteLine(line)) {
+              <ng-container *hasPermission="'payment.delete'">
+                <p-button
+                  icon="fa-regular fa-trash-can"
+                  size="small"
+                  severity="danger"
+                  [text]="true"
+                  [pTooltip]="'payment.deletePayment' | transloco"
+                  tooltipPosition="left"
+                  [attr.data-testid]="'delete-payment-' + line.refId"
+                  (onClick)="deletePayment(line)"
+                />
+              </ng-container>
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            <div class="flex flex-col items-center gap-2 py-10 text-slate-400">
+              <i class="fa-solid fa-file-invoice-dollar text-2xl" aria-hidden="true"></i>
+              <span>{{ 'payment.empty' | transloco }}</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Taksit planlari -->
+  <div class="dt-card p-5 flex flex-col gap-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h3 class="m-0 text-base font-semibold text-slate-700">
+        {{ 'payment.plansTitle' | transloco }}
+      </h3>
+      <p-button
+        [label]="'payment.createPlan' | transloco"
+        icon="fa-regular fa-calendar-plus"
+        size="small"
+        [outlined]="true"
+        data-testid="create-plan-btn"
+        (onClick)="openPlan()"
+        *hasPermission="'payment.create'"
+      />
+    </div>
+
+    @if (plans().length === 0) {
+      <div class="flex flex-col items-center gap-2 py-8 text-slate-400">
+        <i class="fa-regular fa-calendar text-2xl" aria-hidden="true"></i>
+        <span>{{ 'payment.noPlans' | transloco }}</span>
+      </div>
+    }
+
+    @for (plan of plans(); track plan.id) {
+      <div class="border border-slate-200 rounded-lg p-4 flex flex-col gap-3" [attr.data-testid]="'plan-' + plan.id">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-4 flex-wrap text-sm">
+            <span class="font-semibold text-slate-700">
+              {{ 'payment.planOf' | transloco: { count: plan.installments.length } }}
+            </span>
+            <span class="text-slate-500">
+              {{ 'payment.planTotal' | transloco }}: <b>{{ plan.totalAmount | money }}</b>
+            </span>
+            <span class="text-emerald-600">
+              {{ 'payment.planPaid' | transloco }}: <b>{{ plan.paidAmount | money }}</b>
+            </span>
+            @if (plan.note) {
+              <span class="text-slate-400 italic">{{ plan.note }}</span>
+            }
+          </div>
+          <ng-container *hasPermission="'payment.create'">
+            <p-button
+              icon="fa-regular fa-trash-can"
+              size="small"
+              severity="danger"
+              [text]="true"
+              [pTooltip]="'payment.deletePlan' | transloco"
+              tooltipPosition="left"
+              (onClick)="deletePlan(plan)"
+            />
+          </ng-container>
+        </div>
+        <p-table [value]="plan.installments" [rowHover]="true" styleClass="p-datatable-sm">
+          <ng-template #header>
+            <tr>
+              <th style="width: 4rem">#</th>
+              <th>{{ 'payment.columns.dueDate' | transloco }}</th>
+              <th class="text-right!">{{ 'payment.columns.amount' | transloco }}</th>
+              <th class="text-right!">{{ 'payment.columns.paidAmount' | transloco }}</th>
+              <th>{{ 'payment.columns.status' | transloco }}</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-inst>
+            <tr>
+              <td>{{ inst.seqNo }}</td>
+              <td>{{ inst.dueDate | trDate: 'dd.MM.yyyy' : true }}</td>
+              <td class="text-right!">{{ inst.amount | money }}</td>
+              <td class="text-right!">{{ inst.paidAmount | money }}</td>
+              <td><app-status-tag kind="installment" [value]="effectiveInstallmentStatus(inst)" /></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Tahsilat Al -->
+<p-dialog
+  [visible]="collectVisible()"
+  (visibleChange)="collectVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '30rem' }"
+  [header]="'payment.collectTitle' | transloco"
+>
+  <form [formGroup]="collectForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveCollect()">
+    <div class="flex flex-col gap-1">
+      <label for="pay-amount" class="text-sm font-medium">
+        {{ 'payment.form.amount' | transloco }} *
+      </label>
+      <p-inputnumber
+        inputId="pay-amount"
+        formControlName="amount"
+        mode="currency"
+        currency="TRY"
+        locale="tr-TR"
+        [min]="0"
+        [fluid]="true"
+        data-testid="collect-amount"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">{{ 'payment.form.method' | transloco }}</label>
+      <p-selectbutton
+        formControlName="method"
+        [options]="methodOptions"
+        optionValue="value"
+        optionDisabled="disabled"
+        [allowEmpty]="false"
+        size="small"
+        data-testid="collect-method"
+      >
+        <ng-template #item let-opt>
+          <span
+            [pTooltip]="opt.disabled ? ('payment.onlineLinkPhaseG' | transloco) : ''"
+            tooltipPosition="top"
+            [attr.data-testid]="'method-' + opt.value"
+          >
+            {{ opt.labelKey | transloco }}
+          </span>
+        </ng-template>
+      </p-selectbutton>
+    </div>
+    @if (showInstallments()) {
+      <div class="flex flex-col gap-1">
+        <label for="pay-installments" class="text-sm font-medium">
+          {{ 'payment.form.installmentCount' | transloco }}
+        </label>
+        <p-inputnumber
+          inputId="pay-installments"
+          formControlName="installmentCount"
+          [min]="1"
+          [max]="24"
+          [showButtons]="true"
+          [fluid]="true"
+        />
+      </div>
+    }
+    <div class="flex flex-col gap-1">
+      <label for="pay-note" class="text-sm font-medium">{{ 'payment.form.note' | transloco }}</label>
+      <textarea id="pay-note" pTextarea formControlName="note" rows="2" class="w-full"></textarea>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="collectVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'payment.collectSave' | transloco"
+        data-testid="collect-save"
+        [loading]="collectSaving()"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Odeme linki uretildi: link + kopyala + SMS durumu -->
+<p-dialog
+  [visible]="linkVisible()"
+  (visibleChange)="linkVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '32rem' }"
+  [header]="'payment.link.title' | transloco"
+>
+  @if (paymentLink(); as link) {
+    <div class="flex flex-col gap-3 pt-1" data-testid="payment-link-box">
+      <div class="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+        <i class="fa-solid fa-circle-check mt-0.5 text-emerald-500" aria-hidden="true"></i>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-semibold text-emerald-800">
+            {{ 'payment.link.created' | transloco }}
+          </span>
+          <span class="text-sm text-emerald-800/90" data-testid="payment-link-sms-status">
+            {{
+              (link.messageId ? 'payment.link.smsSent' : 'payment.link.smsNotSent') | transloco
+            }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="payment-link-url" class="text-sm font-medium">
+          {{ 'payment.link.url' | transloco }}
+        </label>
+        <div class="flex items-center gap-2">
+          <input
+            id="payment-link-url"
+            class="w-full rounded-md border border-slate-300 bg-slate-50 px-2 py-1.5 font-mono text-xs text-slate-700"
+            [value]="link.linkUrl || ''"
+            readonly
+            data-testid="payment-link-url"
+          />
+          <p-button
+            [label]="'payment.link.copy' | transloco"
+            [icon]="linkCopied() ? 'fa-solid fa-check' : 'fa-solid fa-copy'"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="copyLink()"
+            data-testid="payment-link-copy"
+          />
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500">{{ 'payment.link.hint' | transloco }}</p>
+
+      <div class="flex justify-end pt-2">
+        <p-button
+          [label]="'common.close' | transloco"
+          severity="secondary"
+          (onClick)="linkVisible.set(false)"
+          data-testid="payment-link-close"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>
+
+<!-- Indirim -->
+<p-dialog
+  [visible]="discountVisible()"
+  (visibleChange)="discountVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '26rem' }"
+  [header]="'payment.discountTitle' | transloco"
+>
+  <form [formGroup]="discountForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveDiscount()">
+    <div class="flex flex-col gap-1">
+      <label for="disc-amount" class="text-sm font-medium">
+        {{ 'payment.form.amount' | transloco }} *
+      </label>
+      <p-inputnumber
+        inputId="disc-amount"
+        formControlName="amount"
+        mode="currency"
+        currency="TRY"
+        locale="tr-TR"
+        [min]="0"
+        [fluid]="true"
+        data-testid="discount-amount"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="disc-desc" class="text-sm font-medium">
+        {{ 'payment.form.description' | transloco }}
+      </label>
+      <textarea
+        id="disc-desc"
+        pTextarea
+        formControlName="description"
+        rows="2"
+        class="w-full"
+      ></textarea>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="discountVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'payment.discountSave' | transloco"
+        data-testid="discount-save"
+        [loading]="discountSaving()"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Plan Olustur -->
+<p-dialog
+  [visible]="planVisible()"
+  (visibleChange)="planVisible.set($event)"
+  [modal]="true"
+  [focusOnShow]="false"
+  [style]="{ width: '32rem' }"
+  [header]="'payment.createPlanTitle' | transloco"
+>
+  <form [formGroup]="planForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="savePlan()">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="plan-total" class="text-sm font-medium">
+          {{ 'payment.form.totalAmount' | transloco }} *
+        </label>
+        <p-inputnumber
+          inputId="plan-total"
+          formControlName="totalAmount"
+          mode="currency"
+          currency="TRY"
+          locale="tr-TR"
+          [min]="0"
+          [fluid]="true"
+          data-testid="plan-total"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="plan-count" class="text-sm font-medium">
+          {{ 'payment.form.installmentCount' | transloco }} *
+        </label>
+        <p-inputnumber
+          inputId="plan-count"
+          formControlName="installmentCount"
+          [min]="1"
+          [max]="36"
+          [showButtons]="true"
+          [fluid]="true"
+          data-testid="plan-count"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="plan-start" class="text-sm font-medium">
+        {{ 'payment.form.startDate' | transloco }} *
+      </label>
+      <p-datepicker
+        inputId="plan-start"
+        formControlName="startDate"
+        dateFormat="dd.mm.yy"
+        [showIcon]="true"
+        [fluid]="true"
+        appendTo="body"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="plan-note" class="text-sm font-medium">{{ 'payment.form.note' | transloco }}</label>
+      <textarea id="plan-note" pTextarea formControlName="note" rows="2" class="w-full"></textarea>
+    </div>
+
+    @if (planPreview().length) {
+      <div class="border border-slate-200 rounded-lg p-3">
+        <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+          {{ 'payment.planPreview' | transloco }}
+        </div>
+        <div class="max-h-44 overflow-y-auto flex flex-col gap-1 text-sm">
+          @for (row of planPreview(); track row.seqNo) {
+            <div class="flex justify-between">
+              <span class="text-slate-500">
+                {{ row.seqNo }}. {{ row.dueDate | trDate: 'dd.MM.yyyy' }}
+              </span>
+              <span class="font-medium">{{ row.amount | money }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="planVisible.set(false)"
+      />
+      <p-button
+        type="submit"
+        [label]="'common.save' | transloco"
+        data-testid="plan-save"
+        [loading]="planSaving()"
+      />
+    </div>
+  </form>
+</p-dialog>

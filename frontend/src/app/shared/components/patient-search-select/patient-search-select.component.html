@@ -1,0 +1,88 @@
+<p-autocomplete
+  [ngModel]="value()"
+  (ngModelChange)="onModelChange($event)"
+  [suggestions]="suggestions()"
+  (completeMethod)="search($event)"
+  [minLength]="2"
+  [delay]="300"
+  optionLabel="label"
+  [forceSelection]="true"
+  [showClear]="true"
+  [fluid]="true"
+  [disabled]="disabled()"
+  [inputId]="inputId()"
+  [placeholder]="placeholderKey() | transloco"
+  (onBlur)="onTouched()"
+>
+  <ng-template #item let-option>
+    <div class="flex items-center justify-between gap-3 w-full">
+      <span>{{ option.label }}</span>
+      <span class="text-xs text-slate-400">
+        #{{ option.fileNo }}@if (option.phone) { · {{ option.phone }} }
+      </span>
+    </div>
+  </ng-template>
+
+  <ng-template #empty>
+    <div class="px-3 py-2 text-sm text-slate-400">{{ 'patientSearch.noResults' | transloco }}</div>
+  </ng-template>
+
+  @if (allowQuickCreate()) {
+    <ng-template #footer>
+      <div class="border-t border-slate-200 p-2">
+        <p-button
+          [label]="'patientSearch.quickCreate' | transloco"
+          icon="fa-solid fa-user-plus"
+          size="small"
+          text
+          [fluid]="true"
+          (onClick)="openQuickCreate()"
+        />
+      </div>
+    </ng-template>
+  }
+</p-autocomplete>
+
+@if (allowQuickCreate()) {
+  <p-dialog
+    [visible]="quickCreateVisible()"
+    (visibleChange)="quickCreateVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: '26rem' }"
+    [header]="'patientSearch.quickCreateTitle' | transloco"
+  >
+    <form [formGroup]="quickForm" class="flex flex-col gap-3 pt-1" (ngSubmit)="saveQuickCreate()">
+      <div class="flex flex-col gap-1">
+        <label for="qc-firstname" class="text-sm font-medium">
+          {{ 'patients.form.firstName' | transloco }} *
+        </label>
+        <input id="qc-firstname" pInputText formControlName="firstName" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="qc-lastname" class="text-sm font-medium">
+          {{ 'patients.form.lastName' | transloco }} *
+        </label>
+        <input id="qc-lastname" pInputText formControlName="lastName" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="qc-phone" class="text-sm font-medium">
+          {{ 'patients.form.phone' | transloco }}
+        </label>
+        <app-phone-input inputId="qc-phone" formControlName="phone" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <p-button
+          [label]="'common.cancel' | transloco"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="quickCreateVisible.set(false)"
+        />
+        <p-button
+          type="submit"
+          [label]="'common.save' | transloco"
+          [loading]="quickCreateSaving()"
+        />
+      </div>
+    </form>
+  </p-dialog>
+}

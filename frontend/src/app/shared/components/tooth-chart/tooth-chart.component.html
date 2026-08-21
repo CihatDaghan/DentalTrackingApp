@@ -1,0 +1,126 @@
+<svg
+  [class]="svgClass()"
+  [attr.viewBox]="viewBox"
+  preserveAspectRatio="xMidYMid meet"
+  role="group"
+  [attr.aria-label]="chartAria()"
+>
+  <defs>
+    @for (p of hatchPatterns(); track p.id) {
+      <pattern
+        [id]="p.id"
+        patternUnits="userSpaceOnUse"
+        width="7"
+        height="7"
+        patternTransform="rotate(45)"
+      >
+        <line x1="0" y1="0" x2="0" y2="7" [attr.stroke]="p.color" stroke-width="2.6" />
+      </pattern>
+    }
+  </defs>
+
+  <!-- Orta hat ayraclari -->
+  <line class="tc-midline" [attr.x1]="midX" y1="40" [attr.x2]="midX" y2="620" />
+  <line class="tc-hline" x1="40" y1="332" [attr.x2]="midX - 24" y2="332" />
+  <line class="tc-hline" [attr.x1]="midX + 24" y1="332" x2="1160" y2="332" />
+
+  @for (t of teethVM(); track t.no) {
+    <g
+      class="tooth"
+      [class.selected]="selectedSet().has(t.no)"
+      [attr.data-tooth]="t.no"
+      role="button"
+      [attr.tabindex]="readonly() ? -1 : 0"
+      [attr.aria-label]="t.aria"
+      [attr.aria-pressed]="selectedSet().has(t.no)"
+      (click)="onToothClick($event, t)"
+      (keydown.enter)="onToothKey($event, t)"
+      (keydown.space)="onToothKey($event, t)"
+    >
+      <title>{{ t.tooltip }}</title>
+
+      <!-- Secim / hover halosu -->
+      <rect
+        class="tc-halo"
+        [attr.x]="t.haloX"
+        [attr.y]="t.haloY"
+        width="66"
+        [attr.height]="t.haloH"
+        rx="12"
+      />
+
+      <!-- Anatomik cizim: kokler + kuron (alt cene dikeyde aynalanir) -->
+      <g [attr.transform]="t.anatomyTransform">
+        <g [class.tc-missing]="t.missing">
+          @if (t.implant; as imp) {
+            <g [class]="'mark mark-' + imp.layer">
+              <path
+                class="tc-implant-body"
+                [attr.d]="implantShape.body"
+                [attr.fill]="imp.fill"
+                [attr.fill-opacity]="imp.fillOpacity"
+                [attr.stroke]="imp.color"
+              />
+              <path class="tc-implant-threads" [attr.d]="implantShape.threads" />
+            </g>
+          } @else {
+            @for (root of t.template.roots; track $index) {
+              <path class="tc-root" [attr.d]="root" />
+              @if (t.rootCanal; as rc) {
+                <path
+                  [class]="'mark mark-' + rc.layer"
+                  [attr.d]="root"
+                  [attr.fill]="rc.fill"
+                  [attr.fill-opacity]="rc.fillOpacity"
+                  [attr.stroke]="rc.stroke"
+                />
+              }
+            }
+          }
+
+          <path class="tc-crown" [attr.d]="t.template.crown" />
+          @for (m of t.crownMarks; track $index) {
+            <path
+              [class]="'mark mark-' + m.layer"
+              [attr.d]="t.template.crown"
+              [attr.fill]="m.fill"
+              [attr.fill-opacity]="m.fillOpacity"
+              [attr.stroke]="m.stroke"
+            />
+          }
+        </g>
+
+        @if (t.missing) {
+          <path class="tc-missing-x" [attr.d]="t.missingX" />
+        }
+      </g>
+
+      <!-- Yuzey secim besgeni (5 parcali kutu) -->
+      <g [attr.transform]="t.boxTransform">
+        @for (cell of t.surfaceCells; track cell.surface) {
+          <g class="tc-surface-cell">
+            <path
+              class="tc-surface"
+              [attr.d]="cell.d"
+              (click)="onSurfaceClick($event, t, cell.surface)"
+            >
+              <title>{{ t.no }} — {{ cell.label }}</title>
+            </path>
+            @for (m of cell.marks; track $index) {
+              <path
+                [class]="'mark tc-surface-mark mark-' + m.layer"
+                [attr.d]="cell.d"
+                [attr.fill]="m.fill"
+                [attr.fill-opacity]="m.fillOpacity"
+                [attr.stroke]="m.stroke"
+              />
+            }
+          </g>
+        }
+      </g>
+
+      <!-- Dis numarasi (sira ic tarafinda) -->
+      <text class="tc-number" [attr.x]="t.cx" [attr.y]="t.numY">{{ t.no }}</text>
+    </g>
+  }
+</svg>

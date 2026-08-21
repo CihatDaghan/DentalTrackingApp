@@ -1,0 +1,26 @@
+{
+ "paket": "405",
+ "alanlar": [
+  {
+   "id": "0",
+   "depth": 0,
+   "ad": "GUNLUK_VERI_SORGULAMA",
+   "nesneTipi": "VeriSeti",
+   "zorunlu": "Evet",
+   "tekrar": "",
+   "tip": "",
+   "tanim": ""
+  },
+  {
+   "id": "0.0",
+   "depth": 1,
+   "ad": "SORGU_TARIHI",
+   "nesneTipi": "Oge",
+   "zorunlu": "Evet",
+   "tekrar": "Hayır",
+   "tip": "datetime",
+   "tanim": ""
+  }
+ ],
+ "sonucKodlari": []
+}

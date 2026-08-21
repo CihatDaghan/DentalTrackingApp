@@ -1,0 +1,167 @@
+.pl {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pl__sidebar {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pl__sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pl__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pl__lists {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pl__list {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+
+  &:hover {
+    background: #f8fafc;
+
+    .pl__list-actions {
+      opacity: 1;
+    }
+  }
+
+  &--active {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+}
+
+.pl__list-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pl__list-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.pl__list-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.pl__list-actions {
+  display: inline-flex;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.pl__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.72rem;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+
+  &--danger:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.pl__main {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pl__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pl__toolbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.pl__search {
+  width: 16rem;
+  max-width: 100%;
+}
+
+.pl__spacer {
+  flex: 1;
+}
+
+.pl__dirty {
+  font-size: 0.78rem;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+}
+
+.pl__row--dirty td {
+  background: #fffbeb;
+}
+
+.pl__muted {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.pl__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4rem 1rem;
+  color: #94a3b8;
+}

@@ -1,0 +1,208 @@
+<div class="flex flex-col gap-3" data-testid="admin-announcements">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h2 class="m-0 text-lg font-semibold text-slate-800">
+      {{ 'admin.announcements.title' | transloco }}
+    </h2>
+    <p-button
+      [label]="'admin.announcements.create' | transloco"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openCreate()"
+      data-testid="announcement-create"
+    />
+  </div>
+
+  <div class="dt-card p-0 overflow-hidden">
+    <p-table [value]="items()" [loading]="loading()" dataKey="id" styleClass="p-datatable-sm">
+      <ng-template #header>
+        <tr>
+          <th>{{ 'admin.announcements.titleField' | transloco }}</th>
+          <th>{{ 'admin.announcements.severityField' | transloco }}</th>
+          <th>{{ 'admin.announcements.target' | transloco }}</th>
+          <th>{{ 'admin.announcements.starts' | transloco }}</th>
+          <th>{{ 'admin.announcements.ends' | transloco }}</th>
+          <th>{{ 'admin.announcements.activeField' | transloco }}</th>
+          <th style="width: 7rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr [attr.data-testid]="'announcement-row-' + row.id">
+          <td class="font-medium text-slate-700">
+            {{ row.title }}
+            <span class="block text-xs font-normal text-slate-400">{{ row.body }}</span>
+          </td>
+          <td>
+            <span
+              class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              [class.bg-blue-100]="row.severity === 1"
+              [class.text-blue-700]="row.severity === 1"
+              [class.bg-amber-100]="row.severity === 2"
+              [class.text-amber-700]="row.severity === 2"
+            >
+              {{ severityLabel(row.severity) | transloco }}
+            </span>
+          </td>
+          <td class="text-slate-500">
+            {{ row.targetTenantName || ('admin.announcements.allTenants' | transloco) }}
+          </td>
+          <td class="text-slate-500 text-xs">{{ row.startsAtUtc | trDate: 'dd.MM.yyyy HH:mm' }}</td>
+          <td class="text-slate-500 text-xs">
+            {{ row.endsAtUtc ? (row.endsAtUtc | trDate: 'dd.MM.yyyy HH:mm') : '—' }}
+          </td>
+          <td>
+            @if (row.isActive) {
+              <i class="fa-solid fa-circle-check text-emerald-600" aria-hidden="true"></i>
+            } @else {
+              <i class="fa-solid fa-circle-minus text-slate-300" aria-hidden="true"></i>
+            }
+          </td>
+          <td class="text-right! whitespace-nowrap">
+            <p-button
+              [text]="true"
+              size="small"
+              severity="secondary"
+              icon="fa-solid fa-pen"
+              (onClick)="openEdit(row)"
+              [attr.data-testid]="'announcement-edit-' + row.id"
+            />
+            <p-button
+              [text]="true"
+              size="small"
+              severity="danger"
+              icon="fa-solid fa-trash"
+              (onClick)="remove(row)"
+              [attr.data-testid]="'announcement-delete-' + row.id"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7" class="text-center text-slate-400 py-6">{{ 'table.empty' | transloco }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  [header]="
+    (form().id ? 'admin.announcements.editTitle' : 'admin.announcements.createTitle') | transloco
+  "
+  [draggable]="false"
+>
+  <div class="flex flex-col gap-3">
+    <label class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-slate-500">
+        {{ 'admin.announcements.titleField' | transloco }}
+      </span>
+      <input
+        pInputText
+        [ngModel]="form().title"
+        (ngModelChange)="patch({ title: $event })"
+        data-testid="announcement-title"
+      />
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-slate-500">
+        {{ 'admin.announcements.bodyField' | transloco }}
+      </span>
+      <textarea
+        pTextarea
+        rows="3"
+        [ngModel]="form().body"
+        (ngModelChange)="patch({ body: $event })"
+        data-testid="announcement-body"
+      ></textarea>
+    </label>
+
+    <div class="grid grid-cols-2 gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.announcements.severityField' | transloco }}
+        </span>
+        <p-select
+          [options]="severityOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="form().severity"
+          (ngModelChange)="patch({ severity: $event })"
+          appendTo="body"
+          data-testid="announcement-severity"
+        />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.announcements.target' | transloco }}
+        </span>
+        <p-select
+          [options]="tenantOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="form().targetTenantId"
+          (ngModelChange)="patch({ targetTenantId: $event })"
+          appendTo="body"
+          data-testid="announcement-target"
+        />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.announcements.starts' | transloco }}
+        </span>
+        <p-datepicker
+          [ngModel]="form().startsAt"
+          (ngModelChange)="patch({ startsAt: $event })"
+          dateFormat="dd.mm.yy"
+          [showTime]="true"
+          hourFormat="24"
+          appendTo="body"
+        />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-slate-500">
+          {{ 'admin.announcements.ends' | transloco }}
+        </span>
+        <p-datepicker
+          [ngModel]="form().endsAt"
+          (ngModelChange)="patch({ endsAt: $event })"
+          dateFormat="dd.mm.yy"
+          [showTime]="true"
+          hourFormat="24"
+          appendTo="body"
+        />
+      </label>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <p-toggleswitch
+        [ngModel]="form().isActive"
+        (ngModelChange)="patch({ isActive: $event })"
+        data-testid="announcement-active"
+      />
+      <span class="text-sm text-slate-600">{{ 'admin.announcements.activeField' | transloco }}</span>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button
+        [label]="'common.cancel' | transloco"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        (onClick)="dialogVisible.set(false)"
+      />
+      <p-button
+        [label]="'common.save' | transloco"
+        icon="fa-solid fa-check"
+        size="small"
+        [loading]="saving()"
+        (onClick)="save()"
+        data-testid="announcement-save"
+      />
+    </div>
+  </div>
+</p-dialog>
